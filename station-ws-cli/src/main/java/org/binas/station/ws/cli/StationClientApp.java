@@ -36,10 +36,10 @@ public class StationClientApp {
 		// The following remote invocation is just a basic example.
 		// The actual tests are made using JUnit.
 
-		// System.out.println("Invoke ping()...");
-		// String result = client.testPing("client");
-		// System.out.print("Result: ");
-		// System.out.println(result);
+		 System.out.println("Invoke ping()...");
+		 String result = client.testPing("client");
+		 System.out.print("Result: ");
+		 System.out.println(result);
 	}
 
 }

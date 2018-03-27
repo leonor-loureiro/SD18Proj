@@ -53,7 +53,7 @@ public class Station {
  	
  	/** Synchronized locks object to configure initial values */
  	public synchronized void init(int x, int y, int capacity, int returnPrize) throws BadInitException {
- 		if(x < 0 || y < 0 || capacity < 0 || returnPrize < 0)
+ 		if(x < 0 || y < 0 || x > 99 || y > 99 || capacity < 0 || returnPrize < 0)
  			throw new BadInitException();
 		this.coordinates = new Coordinates(x, y);
  		this.maxCapacity = capacity;

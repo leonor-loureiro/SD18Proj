@@ -26,12 +26,12 @@ public class StationApp {
 		System.out.println(StationApp.class.getSimpleName() + " running");
 
 		// TODO start Web Service
-		// try {
-		// endpoint.start();
-		// endpoint.awaitConnections();
-		// } finally {
-		// endpoint.stop();
-		// }
+		try {
+			endpoint.start();
+			endpoint.awaitConnections();
+		 } finally {
+			 endpoint.stop();
+		 }
 
 	}
 
