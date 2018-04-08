@@ -26,7 +26,7 @@
 		<ws.i>1</ws.i>
 		<uddi.url>http://t08:Ta4TXUB@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
 
-	
+
 		<group.id>T08</group.id>
 
 		<ws.name>${group.id}_Station${ws.i}</ws.name>
@@ -36,6 +36,12 @@
 	</properties>
 
 	<dependencies>
+		<!-- UDDI Naming -->
+		<dependency>
+			<groupId>pt.ulisboa.tecnico.sdis</groupId>
+			<artifactId>uddi-naming</artifactId>
+			<version>1.2</version>
+		</dependency>
 		<dependency>
 			<groupId>com.sun.xml.ws</groupId>
 			<artifactId>jaxws-rt</artifactId>
