@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.xml.ws.Endpoint;
 
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+
 /** The endpoint manager starts and registers the service. */
 public class StationEndpointManager {
 
@@ -23,21 +25,21 @@ public class StationEndpointManager {
 	/** Port implementation */
 	private StationPortImpl portImpl = new StationPortImpl(this);
 
-	// /** Obtain Port implementation */
-	// public StationPortType getPort() {
-	// return portImpl;
-	// }
+//	 /** Obtain Port implementation */
+//	 public StationPortType getPort() {
+//		 return portImpl;
+//	 }
 
 	/** Web Service end point */
 	private Endpoint endpoint = null;
 
-	// /** UDDI Naming instance for contacting UDDI server */
-	// private UDDINaming uddiNaming = null;
-	//
-	// /** Get UDDI Naming instance for contacting UDDI server */
-	// UDDINaming getUddiNaming() {
-	// return uddiNaming;
-	// }
+	 /** UDDI Naming instance for contacting UDDI server */
+	 private UDDINaming uddiNaming = null;
+	
+	 /** Get UDDI Naming instance for contacting UDDI server */
+	 UDDINaming getUddiNaming() {
+		 return uddiNaming;
+	 }
 
 	/** output option */
 	private boolean verbose = true;
@@ -119,11 +121,23 @@ public class StationEndpointManager {
 	/* UDDI */
 
 	void publishToUDDI() throws Exception {
-		// TODO
+		uddiNaming = new UDDINaming(uddiURL);
+		uddiNaming.rebind(wsName, wsURL);
+		
 	}
 
 	void unpublishFromUDDI() {
-		// TODO
+		try {
+			if(uddiNaming != null) {
+				uddiNaming.unbind(wsName);
+				System.out.printf("Deleted '%s' from UDDI%n", wsName);
+			}
+		}catch(Exception e) {
+			if (verbose) {
+				System.out.printf("Caught exception when stopping: %s%n", e);
+			}
+		}
+		
 	}
 
 }

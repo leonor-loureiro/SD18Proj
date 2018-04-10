@@ -28,9 +28,6 @@
 		<ws.host>localhost</ws.host>
 		<ws.port>808${ws.i}</ws.port>
 		<ws.url>http://${ws.host}:${ws.port}/station-ws/endpoint</ws.url>
-
-		<!-- Please replace 'T08' below with your C (campus) with A (Alameda) / 
-			T (Tagus); and your group number with two digits. Then delete this comment. -->
 		<ws.name>T08_Station${ws.i}</ws.name>
 		<uddi.url>http://t08:Ta4TXUB@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
 
@@ -41,6 +38,12 @@
 			<groupId>com.sun.xml.ws</groupId>
 			<artifactId>jaxws-rt</artifactId>
 			<version>2.2.10</version>
+		</dependency>
+		<dependency>
+			<!-- UDDI Naming -->
+			<groupId>pt.ulisboa.tecnico.sdis</groupId>
+			<artifactId>uddi-naming</artifactId>
+			<version>1.2</version>
 		</dependency>
 	</dependencies>
 
@@ -71,13 +74,7 @@
 					<!-- http://www.mojohaus.org/jaxws-maven-plugin/wsimport-mojo.html -->
 					<wsdlDirectory>${basedir}/src/main/resources</wsdlDirectory>
 				</configuration>
-				<dependencies>
-					<!-- UDDI Naming -->
-					<dependency>
-						<groupId>pt.ulisboa.tecnico.sdis</groupId>
-						<artifactId>uddi-naming</artifactId>
-						<version>1.2</version>
-					</dependency>
+				<dependencies>					
 					<dependency>
 						<groupId>com.sun.xml.ws</groupId>
 						<artifactId>jaxws-tools</artifactId>
@@ -103,6 +100,7 @@
 					<arguments>
 						<argument>${ws.name}</argument>
 						<argument>${ws.url}</argument>
+						<argument>${uddi.url}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

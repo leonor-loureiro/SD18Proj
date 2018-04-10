@@ -10,22 +10,22 @@ public class StationApp {
 
 	public static void main(String[] args) throws Exception {
 		// Check arguments
-		if (args.length < 2) {
+		if (args.length < 3) {
 			System.err.println("Argument(s) missing!");
 			System.err.println("Usage: java " + StationApp.class.getName() + "wsName wsURL OR wsName wsURL uddiURL");
 			return;
 		}
 		String wsName = args[0];
 		String wsURL = args[1];
+		String UDDINaming = args[2];
 		
-		// TODO handle UDDI arguments
 
-		StationEndpointManager endpoint = new StationEndpointManager(wsName, wsURL);
+		StationEndpointManager endpoint = new StationEndpointManager(UDDINaming, wsName, wsURL);
 		Station.getInstance().setId(wsName);
 
 		System.out.println(StationApp.class.getSimpleName() + " running");
 
-		// TODO start Web Service
+		
 		try {
 			endpoint.start();
 			endpoint.awaitConnections();

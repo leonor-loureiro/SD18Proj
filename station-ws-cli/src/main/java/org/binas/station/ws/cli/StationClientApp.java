@@ -25,12 +25,13 @@ public class StationClientApp {
 		// Create client.
 		StationClient client = null;
 
-		if (wsURL != null) {
-			System.out.printf("Creating client for server at %s%n", wsURL);
-			client = new StationClient(wsURL);
-		} else if (uddiURL != null) {
+		if (uddiURL != null) {
 			System.out.printf("Creating client using UDDI at %s for server with name %s%n", uddiURL, wsName);
 			client = new StationClient(uddiURL, wsName);
+		} else if (wsURL != null) {
+			System.out.printf("Creating client for server at %s%n", wsURL);
+			client = new StationClient(wsURL);
+			
 		}
 
 		// The following remote invocation is just a basic example.
