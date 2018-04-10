@@ -8,6 +8,9 @@ import javax.jws.WebService;
 import org.binas.domain.Coordinates;
 import org.binas.domain.Station;
 import org.binas.domain.User;
+import org.binas.domain.exception.EmailExistsException;
+import org.binas.domain.exception.InvalidEmailException;
+import org.binas.domain.exception.UserNotExistsException;
 
 /**
  * This class implements the Web Service port type (interface). The annotations
@@ -38,13 +41,24 @@ public class BinasPortImpl implements BinasPortType{
 
 	@Override
 	public int getCredit(String email) throws UserNotExists_Exception {
-		// TODO Auto-generated method stub
+		try {
+			return User.getUserByEmail(email).getCredit();
+		}catch(UserNotExistsException unee) {
+			throwUserNotExists("getCredit: no user with given email");
+		}
 		return 0;
 	}
 
 	@Override
 	public UserView activateUser(String email) throws EmailExists_Exception, InvalidEmail_Exception {
-		// TODO Auto-generated method stub
+		try {
+			User user = new User(email,false,0);
+			return buildUserView(user);
+		}catch(EmailExistsException eee) {
+			throwEmailExists("activateUser: email taken");
+		}catch(InvalidEmailException iee) {
+			throwInvalidEmail("activateUser: email format invalid");
+		}
 		return null;
 	}
 
