@@ -50,7 +50,10 @@ public class BinasEndpointManager {
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
 	}
-
+	
+	public String getUddiURL() {
+		return uddiURL;
+	}
 	/** constructor with provided UDDI location, WS name, and WS URL */
 	public BinasEndpointManager(String uddiURL, String wsName, String wsURL) {
 		this.uddiURL = uddiURL;

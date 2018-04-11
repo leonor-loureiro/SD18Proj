@@ -9,8 +9,12 @@ import org.binas.domain.BinasManager;
 import org.binas.domain.Coordinates;
 import org.binas.domain.Station;
 import org.binas.domain.User;
+import org.binas.domain.exception.AlreadyHasBinaException;
 import org.binas.domain.exception.EmailExistsException;
 import org.binas.domain.exception.InvalidEmailException;
+import org.binas.domain.exception.InvalidStationException;
+import org.binas.domain.exception.NoBinaAvailException;
+import org.binas.domain.exception.NoCreditException;
 import org.binas.domain.exception.UserNotExistsException;
 
 /**
@@ -33,6 +37,7 @@ public class BinasPortImpl implements BinasPortType {
 	/** Constructor receives a reference to the endpoint manager. */
 	public BinasPortImpl(BinasEndpointManager endpointManager) {
 		this.endpointManager = endpointManager;
+		BinasManager.getInstance().setUddiUrl(this.endpointManager.getUddiURL());
 	}
 
 	@Override
@@ -43,7 +48,13 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public StationView getInfoStation(String stationId) throws InvalidStation_Exception {
-		// TODO Auto-generated method stub
+		try {
+			return buildStationView(
+					BinasManager.getInstance().getInfoStation(stationId)
+					);
+		}catch(InvalidStationException ise) {
+			throwInvalidStation("Station " + stationId + " does not exist.");
+		}
 		return null;
 	}
 
@@ -72,7 +83,23 @@ public class BinasPortImpl implements BinasPortType {
 	@Override
 	public void rentBina(String stationId, String email) throws AlreadyHasBina_Exception, InvalidStation_Exception,
 			NoBinaAvail_Exception, NoCredit_Exception, UserNotExists_Exception {
-		// TODO Auto-generated method stub
+		try{
+			BinasManager.getInstance().rentBina(stationId, email);
+		}catch(AlreadyHasBinaException ahbe) {
+			throwAlreadyHasBina("User already has a bina.");
+			
+		}catch(InvalidStationException ise) {
+			throwInvalidStation("Station " + stationId + " does not exist.");
+			
+		}catch(NoCreditException nce) {
+			throwNoCredit("User does not have credit.");
+			
+		}catch(UserNotExistsException unee) {
+			throwUserNotExists("No user " + email + ".");
+			
+		}catch(NoBinaAvailException nbae) {
+			throwNoBinaAvail("No bina available in statio " +  stationId + ".");
+		}
 
 	}
 
@@ -133,7 +160,7 @@ public class BinasPortImpl implements BinasPortType {
 	// View helpers ----------------------------------------------------------
 
 	/** Helper to convert a domain coordinates to a view. */
-	private CoordinatesView buildCoordinatesView(Coordinates coordinates) {
+	private CoordinatesView buildCoordinatesView(org.binas.station.ws.CoordinatesView coordinates) {
 		CoordinatesView view = new CoordinatesView();
 		view.setX(coordinates.getX());
 		view.setY(coordinates.getY());
@@ -150,7 +177,7 @@ public class BinasPortImpl implements BinasPortType {
 	}
 
 	/** Helper to convert a domain station to a view. */
-	private StationView buildStationView(Station station) {
+	private StationView buildStationView(org.binas.station.ws.StationView station) {
 		StationView view = new StationView();
 		view.setId(station.getId());
 		view.setCoordinate(buildCoordinatesView(station.getCoordinate()));

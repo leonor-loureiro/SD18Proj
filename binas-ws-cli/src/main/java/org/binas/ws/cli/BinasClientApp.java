@@ -45,6 +45,10 @@ public class BinasClientApp {
 		 client.testInit(10);
 		 int credit = client.getCredit("username@domain");
 		 System.out.println("username@domain credit = " + credit);
+		 
+		 client.rentBina("T08_Station1","username@domain");
+		 
+		 System.out.println(client.getInfoStation("T08_Station1").getFreeDocks());
 	 }
 }
 
