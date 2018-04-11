@@ -14,8 +14,10 @@ import org.binas.domain.exception.EmailExistsException;
 import org.binas.domain.exception.InvalidEmailException;
 import org.binas.domain.exception.InvalidStationException;
 import org.binas.domain.exception.NoBinaAvailException;
+import org.binas.domain.exception.NoBinaRentedException;
 import org.binas.domain.exception.NoCreditException;
 import org.binas.domain.exception.UserNotExistsException;
+import org.binas.station.ws.NoSlotAvail_Exception;
 
 /**
  * This class implements the Web Service port type (interface). The annotations
@@ -106,7 +108,17 @@ public class BinasPortImpl implements BinasPortType {
 	@Override
 	public void returnBina(String stationId, String email)
 			throws FullStation_Exception, InvalidStation_Exception, NoBinaRented_Exception, UserNotExists_Exception {
-		// TODO Auto-generated method stub
+		try {
+			BinasManager.getInstance().returnBina(stationId, email);
+		} catch (InvalidStationException e) {
+			throwInvalidStation("Station "+ stationId+ "does not exists.");
+		} catch (UserNotExistsException e) {
+			throwUserNotExists("No user " + email + ".");
+		} catch (NoSlotAvail_Exception e) {
+			throwFullStation("Station " + stationId+ "is full.");
+		} catch (NoBinaRentedException e) {
+			throwNoBinaRented("User " + email + " has no bina rented to return.");
+		}
 
 	}
 	// Test Control operations -----------------------------------------------

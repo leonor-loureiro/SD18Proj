@@ -49,6 +49,9 @@ public class BinasClientApp {
 		 client.rentBina("T08_Station1","username@domain");
 		 
 		 System.out.println(client.getInfoStation("T08_Station1").getFreeDocks());
+		 
+		 client.returnBina("T08_Station1","username@domain");
+		 System.out.println("Tried to return bina");
 	 }
 }
 
