@@ -27,7 +27,7 @@ public class BinasEndpointManager {
 	private String wsURL = null;
 
 	/** Port implementation */
-	private BinasPortImpl portImpl = new BinasPortImpl();
+	private BinasPortImpl portImpl = new BinasPortImpl(this);
 	
 	/** Web Service end point */
 	private Endpoint endpoint = null;
