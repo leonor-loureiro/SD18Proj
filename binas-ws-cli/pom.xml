@@ -20,7 +20,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 
 		<wsdl.directory>${basedir}/../binas-ws/src/main/resources</wsdl.directory>
-		<wsdl.filename>binas.wsdl</wsdl.filename>
+		<wsdl.filename>binas.1_0.wsdl</wsdl.filename>
 
 		<mainclass>org.binas.ws.cli.BinasClientApp</mainclass>
 
@@ -64,12 +64,31 @@
 			</testResource>
 		</testResources>
 		<plugins>
-			<!-- plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>jaxws-maven-plugin</artifactId> 
-				<version>2.4.1</version> <executions> <execution> <goals> <goal>wsimport</goal> 
-				</goals> </execution> </executions> <configuration> <wsdlDirectory>${wsdl.directory}</wsdlDirectory> 
-				<wsdlFiles> <wsdlFile>${wsdl.filename}</wsdlFile> </wsdlFiles> </configuration> 
-				<dependencies> <dependency> <groupId>com.sun.xml.ws</groupId> <artifactId>jaxws-tools</artifactId> 
-				<version>2.2.10</version> </dependency> </dependencies> </plugin -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>jaxws-maven-plugin</artifactId>
+				<version>2.4.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>wsimport</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<wsdlDirectory>${wsdl.directory}</wsdlDirectory>
+					<wsdlFiles>
+						<wsdlFile>${wsdl.filename}</wsdlFile>
+					</wsdlFiles>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>com.sun.xml.ws</groupId>
+						<artifactId>jaxws-tools</artifactId>
+						<version>2.2.10</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.19.1</version>

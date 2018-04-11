@@ -1,50 +1,18 @@
 package org.binas.domain;
 
-import java.util.Set;
-
-import org.binas.domain.exception.EmailExistsException;
-import org.binas.domain.exception.InvalidEmailException;
-import org.binas.domain.exception.UserNotExistsException;
-
 /** Class to store user info. */
 public class User {
-	
-	private static Set<User> users;
 
 	private String email;
 	private boolean hasBina;
 	private int credit;
 
-	public User(String email, boolean hasBina, int credit) throws EmailExistsException, InvalidEmailException {
-		
-		if(email == null && email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) 
-			throw new InvalidEmailException();
-		
-		if(credit < 0) 
-			credit = 0;
-		
-		try {
-			getUserByEmail(email);
-			
-		}catch(UserNotExistsException unee) {
+	public User(String email, boolean hasBina, int credit) {
 			this.email = email;
 			this.hasBina = hasBina;
 			this.credit = credit;
-		
-		users.add(this);
-		}
-		
-		throw new EmailExistsException();		
 	}
 	
-	public static User getUserByEmail(String email) throws UserNotExistsException {
-		for(User user : users) {
-			if(user.getEmail().equals(email)) 
-				return user;
-		}
-		throw new UserNotExistsException();
-	}
-
 	public String getEmail() {
 		return email;
 	}

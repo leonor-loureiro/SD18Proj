@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.jws.WebService;
 
+import org.binas.domain.BinasManager;
 import org.binas.domain.Coordinates;
 import org.binas.domain.Station;
 import org.binas.domain.User;
@@ -42,7 +43,7 @@ public class BinasPortImpl implements BinasPortType{
 	@Override
 	public int getCredit(String email) throws UserNotExists_Exception {
 		try {
-			return User.getUserByEmail(email).getCredit();
+			return BinasManager.getInstance().getCredit(email);
 		}catch(UserNotExistsException unee) {
 			throwUserNotExists("getCredit: no user with given email");
 		}
@@ -52,8 +53,7 @@ public class BinasPortImpl implements BinasPortType{
 	@Override
 	public UserView activateUser(String email) throws EmailExists_Exception, InvalidEmail_Exception {
 		try {
-			User user = new User(email,false,0);
-			return buildUserView(user);
+			BinasManager.getInstance().activateUser(email);
 		}catch(EmailExistsException eee) {
 			throwEmailExists("activateUser: email taken");
 		}catch(InvalidEmailException iee) {
