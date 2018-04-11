@@ -40,7 +40,11 @@ public class BinasClientApp {
 		 System.out.println("Invoke ping()...");
 		 String result = client.testPing("client");
 		 System.out.print(result);
-        
+		 
+		 
+		 client.testInit(10);
+		 int credit = client.getCredit("username@domain");
+		 System.out.println("username@domain credit = " + credit);
 	 }
 }
 

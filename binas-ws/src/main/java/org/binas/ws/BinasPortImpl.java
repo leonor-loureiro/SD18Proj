@@ -104,8 +104,7 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public void testClear() {
-		// TODO Auto-generated method stub
-
+		BinasManager.getInstance().clearUsers();
 	}
 
 	@Override
@@ -117,8 +116,18 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public void testInit(int userInitialPoints) throws BadInit_Exception {
-		// TODO Auto-generated method stub
-
+		try{
+			BinasManager.getInstance().activateUser("username@domain");
+		}catch (InvalidEmailException ine) {
+			throwBadInit("invalid email in init");
+			return;
+		}catch( EmailExistsException eme) {}
+		
+		try {			
+			BinasManager.getInstance().getUserByEmail("username@domain").setCredit(userInitialPoints);
+		}catch(UserNotExistsException ue) {
+			throwBadInit("test user username@domain not found");
+		}
 	}
 
 	// View helpers ----------------------------------------------------------

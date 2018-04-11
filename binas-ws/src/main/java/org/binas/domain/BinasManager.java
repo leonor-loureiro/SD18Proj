@@ -1,5 +1,6 @@
 package org.binas.domain;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.binas.domain.exception.EmailExistsException;
@@ -12,7 +13,7 @@ public class BinasManager {
 	private String id;
 	
 	/* Binas users */
-	private Set<User> users;
+	private Set<User> users = new HashSet<>();
 	
 	// Singleton -------------------------------------------------------------
 
@@ -48,7 +49,7 @@ public class BinasManager {
 	}
 	
 	public User activateUser(String email) throws InvalidEmailException, EmailExistsException {
-		if(email == null && email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
+		if(email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
 			throw new InvalidEmailException();
 		}
 		try {
@@ -60,6 +61,10 @@ public class BinasManager {
 			return user;
 		}
 		throw new EmailExistsException();
+	}
+	
+	public void clearUsers() {
+		users.clear();
 	}
 	
 	public int getCredit(String email) throws UserNotExistsException {
