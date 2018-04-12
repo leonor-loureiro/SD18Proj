@@ -108,6 +108,7 @@
 						<argument>${ws.name}</argument>
 						<argument>${ws.url}</argument>
 						<argument>${uddi.url}</argument>
+						<argument>${station.ws.name}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

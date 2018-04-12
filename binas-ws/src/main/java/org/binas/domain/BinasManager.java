@@ -1,21 +1,16 @@
 package org.binas.domain;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.binas.domain.exception.AlreadyHasBinaException;
-import org.binas.domain.exception.EmailExistsException;
-import org.binas.domain.exception.InvalidEmailException;
-import org.binas.domain.exception.InvalidStationException;
-import org.binas.domain.exception.NoBinaAvailException;
-import org.binas.domain.exception.NoBinaRentedException;
-import org.binas.domain.exception.NoCreditException;
-import org.binas.domain.exception.UserNotExistsException;
+import org.binas.domain.exception.*;
+import org.binas.station.ws.CoordinatesView;
 import org.binas.station.ws.NoBinaAvail_Exception;
 import org.binas.station.ws.NoSlotAvail_Exception;
 import org.binas.station.ws.StationView;
 import org.binas.station.ws.cli.StationClient;
 import org.binas.station.ws.cli.StationClientException;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class BinasManager {
 
@@ -27,6 +22,9 @@ public class BinasManager {
 
 	/* Binas users */
 	private Set<User> users = new HashSet<>();
+
+	/* Station name org template */
+	private String stationWSName;
 
 	// Singleton -------------------------------------------------------------
 
@@ -55,6 +53,10 @@ public class BinasManager {
 		this.id = id;
 	}
 
+	public void setStationWSName(String stationWSName) {
+		this.stationWSName = stationWSName;
+	}
+
 	public String getId(String id) {
 		return this.id;
 	}
@@ -65,6 +67,19 @@ public class BinasManager {
 				return user;
 		}
 		throw new UserNotExistsException();
+	}
+
+	/**
+	 * Lists n stacions closest to coords in crescent order.
+	 * Connects to UDDI to get all stations and then filters.
+	 * @param n
+	 * @param coords
+	 * @return
+	 */
+	public List<StationView> listStations(int n, CoordinatesView coords) {
+		// Get all stations
+		// Filter closest n stations
+		return null;
 	}
 
 	public User activateUser(String email) throws InvalidEmailException, EmailExistsException {
