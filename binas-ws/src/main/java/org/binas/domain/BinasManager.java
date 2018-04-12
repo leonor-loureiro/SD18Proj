@@ -52,18 +52,6 @@ public class BinasManager {
 	}
 
 	/**
-	 * Pings all stations
-	 * @param wsName pingerID
-	 * @return concatenated result
-	 */
-	public String testPing(String wsName) {
-		return getAvailableStations()
-				.stream()
-				.map(station -> station.testPing(wsName))
-				.collect(Collectors.joining("\n", "", "\n"));
-	}
-
-	/**
 	 * SingletonHolder is loaded on the first execution of Singleton.getInstance()
 	 * or the first access to SingletonHolder.INSTANCE, not before.
 	 */
@@ -107,6 +95,24 @@ public class BinasManager {
 		return this.stationWSName;
 	}
 
+    /**
+     * Pings all stations
+     * @param wsName pingerID
+     * @return concatenated result
+     */
+    public String testPing(String wsName) {
+        return getAvailableStations()
+                .stream()
+                .map(station -> station.testPing(wsName))
+                .collect(Collectors.joining("\n", "", "\n"));
+    }
+
+    /**
+     * Gets user from email
+     * @param email
+     * @return Found user
+     * @throws UserNotExistsException if not found
+     */
 	public User getUserByEmail(String email) throws UserNotExistsException {
 		for (User user : users) {
 			if (user.getEmail().equals(email))
@@ -114,15 +120,14 @@ public class BinasManager {
 		}
 		throw new UserNotExistsException();
 	}
-
 	
 	/**
 	 * Lists n stations closest to coordinates in crescent order. Connects to UDDI
 	 * to get all stations and then filters.
 	 * 
-	 * @param n
-	 * @param coords
-	 * @return
+	 * @param n number of stations to return
+	 * @param coords client position
+	 * @return List of StationView's
 	 * @throws StationClientException
 	 */
 	public List<StationView> listStations(int n, CoordinatesView coords) throws StationClientException {
@@ -139,6 +144,13 @@ public class BinasManager {
 		return clients.subList(0, n);
 	}
 
+    /**
+     * Activates user
+     * @param email used to register the new user
+     * @return new User
+     * @throws InvalidEmailException
+     * @throws EmailExistsException
+     */
 	public User activateUser(String email) throws InvalidEmailException, EmailExistsException {
 		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
 			throw new InvalidEmailException();
@@ -214,6 +226,16 @@ public class BinasManager {
 		}
 	}
 
+    /**
+     * Initializes / resets a station.
+     * @param stationId target station
+     * @param x
+     * @param y
+     * @param capacity
+     * @param returnPrize
+     * @throws StationClientException
+     * @throws Exception
+     */
 	public void initStation(String stationId, int x, int y, int capacity, int returnPrize)
 			throws StationClientException, Exception {
 		try {
@@ -225,8 +247,7 @@ public class BinasManager {
 			throw new Exception();
 		}
 	}
-	
-	
+
 	private List<StationClient> getAvailableStations() {
 		List<StationClient> clients = new ArrayList<>();
 		try {
@@ -243,16 +264,25 @@ public class BinasManager {
 	}
 
 	private List<StationView> sortStationViewsByDistance(List<StationView> stations, CoordinatesView coord){
-	
-		Collections.sort(stations, new Comparator<StationView>() {
-			  public int compare(StationView s1, StationView s2) {
-			    CoordinatesView c1 = s1.getCoordinate();
-			    CoordinatesView c2 = s2.getCoordinate();
-			    // (x1-y1)^2 + (x2 - y2)^2 = distance, compares the 2 distances
-			    // Math.pow
-				return (c1.getX() - coord.getX()) * (c1.getX() - coord.getX()) + (c1.getY() - coord.getY()) * (c1.getY() - coord.getY()) 
-						- (c2.getX() - coord.getX()) * (c2.getX() - coord.getX()) + (c2.getY() - coord.getY()) * (c2.getY() - coord.getY());
-			  }});
+		Collections.sort(stations, new StationComparator(coord));
 		return stations;
 	}
+
+	private class StationComparator implements Comparator<StationView> {
+        private double x, y;
+
+        private StationComparator(CoordinatesView cv) {
+            this.x = cv.getX();
+            this.y = cv.getY();
+        }
+
+        @Override
+        public int compare(StationView s1, StationView s2) {
+            CoordinatesView c1 = s1.getCoordinate();
+            CoordinatesView c2 = s2.getCoordinate();
+            double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
+            double dist2 = Math.pow(c2.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
+            return (int) (dist1 - dist2);
+        }
+    }
 }
