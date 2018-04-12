@@ -33,6 +33,10 @@ public class User {
 		return credit;
 	}
 
+	public void receiveBonus(int bonus) {
+		this.credit += bonus;
+	}
+	
 	public void setCredit(int credit) {
 		this.credit = credit;
 	}

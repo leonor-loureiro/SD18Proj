@@ -6,8 +6,6 @@ import java.util.List;
 import javax.jws.WebService;
 
 import org.binas.domain.BinasManager;
-import org.binas.domain.Coordinates;
-import org.binas.domain.Station;
 import org.binas.domain.User;
 import org.binas.domain.exception.AlreadyHasBinaException;
 import org.binas.domain.exception.EmailExistsException;
@@ -149,24 +147,18 @@ public class BinasPortImpl implements BinasPortType {
 	@Override
 	public void testInitStation(String stationId, int x, int y, int capacity, int returnPrize)
 			throws BadInit_Exception {
-		// TODO Auto-generated method stub
-
+		try {
+			BinasManager.getInstance().initStation(stationId, x, y, capacity, returnPrize);			
+		}catch(InvalidStationException e) {
+			throwBadInit("Station "+ stationId+ "does not exists.");
+		}catch(Exception e) {
+			throwBadInit("Invalid init values");
+		}
 	}
 
 	@Override
 	public void testInit(int userInitialPoints) throws BadInit_Exception {
-		try{
-			BinasManager.getInstance().activateUser("username@domain");
-		}catch (InvalidEmailException ine) {
-			throwBadInit("invalid email in init");
-			return;
-		}catch( EmailExistsException eme) {}
-		
-		try {			
-			BinasManager.getInstance().getUserByEmail("username@domain").setCredit(userInitialPoints);
-		}catch(UserNotExistsException ue) {
-			throwBadInit("test user username@domain not found");
-		}
+		BinasManager.getInstance().setUserInitialPoints(userInitialPoints);
 	}
 
 	// View helpers ----------------------------------------------------------

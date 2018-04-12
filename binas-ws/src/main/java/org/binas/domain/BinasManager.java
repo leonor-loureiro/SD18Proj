@@ -1,6 +1,7 @@
 package org.binas.domain;
 
 import org.binas.domain.exception.*;
+import org.binas.station.ws.BadInit_Exception;
 import org.binas.station.ws.CoordinatesView;
 import org.binas.station.ws.NoBinaAvail_Exception;
 import org.binas.station.ws.NoSlotAvail_Exception;
@@ -14,7 +15,7 @@ import java.util.Set;
 
 public class BinasManager {
 
-	/* Binas identifier */
+	/* Binas Manager ID */
 	private String id;
 	
 	/* UDDI url */
@@ -25,6 +26,9 @@ public class BinasManager {
 
 	/* Station name org template */
 	private String stationWSName;
+	
+	/* New user initial credit */
+	private int userInitialPoints = 0;
 
 	// Singleton -------------------------------------------------------------
 
@@ -43,24 +47,37 @@ public class BinasManager {
 		return SingletonHolder.INSTANCE;
 	}
 	
+	
+	public void setId(String id) {
+		this.id = id;
+	}
+	
+	public String getId(String id) {
+		return this.id;
+	}
+	public void setUserInitialPoints(int userInitialPoints) {
+		this.userInitialPoints = userInitialPoints;
+	}
+	
+	public int getUserInitialPoints() {
+		return this.userInitialPoints;
+	}
+	
 	public void setUddiUrl(String uddiUrl) {
 		this.uddiURL = uddiUrl;
 	}
 	public String getUddiUrl() {
 		return uddiURL;
 	}
-	public void setId(String id) {
-		this.id = id;
-	}
 
 	public void setStationWSName(String stationWSName) {
 		this.stationWSName = stationWSName;
 	}
 
-	public String getId(String id) {
-		return this.id;
+	public String getStationWSName() {
+		return this.stationWSName;
 	}
-
+	
 	public User getUserByEmail(String email) throws UserNotExistsException {
 		for (User user : users) {
 			if (user.getEmail().equals(email))
@@ -90,7 +107,7 @@ public class BinasManager {
 			getUserByEmail(email);
 
 		} catch (UserNotExistsException unee) {
-			User user = new User(email, false, 0);
+			User user = new User(email, false, userInitialPoints);
 			users.add(user);
 			return user;
 		}
@@ -118,7 +135,7 @@ public class BinasManager {
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			client.getBina();
-				user.setHasBina(true);
+			user.setHasBina(true);
 			
 		} catch (NoBinaAvail_Exception nbae) {
 			throw new NoBinaAvailException();
@@ -148,10 +165,23 @@ public class BinasManager {
 		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
-			client.returnBina();
+			int bonus = client.returnBina();
 			user.setHasBina(false);
+			user.receiveBonus(bonus);
+			
 		} catch (StationClientException e) {
 			throw new InvalidStationException();
+		}
+	}
+	
+	public void initStation(String stationId, int x, int y, int capacity, int returnPrize) throws StationClientException, Exception{
+		try {
+			StationClient client = new StationClient(uddiURL, stationId);
+			client.testInit(x, y, capacity, returnPrize);
+		}catch(StationClientException e) {
+			throw new InvalidStationException();
+		}catch(BadInit_Exception e) {
+			throw new Exception();
 		}
 	}
 }

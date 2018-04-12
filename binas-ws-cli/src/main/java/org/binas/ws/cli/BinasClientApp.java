@@ -43,6 +43,7 @@ public class BinasClientApp {
 		 
 		 
 		 client.testInit(10);
+		 client.activateUser("username@domain");
 		 int credit = client.getCredit("username@domain");
 		 System.out.println("username@domain credit = " + credit);
 		 
