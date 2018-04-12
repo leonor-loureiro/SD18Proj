@@ -135,20 +135,22 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public String testPing(String inputMessage) {
-		// If no input is received, return a default name.
-		if (inputMessage == null || inputMessage.trim().length() == 0)
-			inputMessage = "Buddy!";
 
-		// If the station does not have a name, return a default.
-		String wsName = endpointManager.getWsName();
-		if (wsName == null || wsName.trim().length() == 0)
-			wsName = "Binas";
-
-		// Build a string with a message to return.
-		StringBuilder builder = new StringBuilder();
-		builder.append("Hello ").append(inputMessage);
-		builder.append(" from ").append(wsName);
-		return builder.toString();
+		return BinasManager.getInstance().testPing(this.endpointManager.getWsName());
+//		// If no input is received, return a default name.
+//		if (inputMessage == null || inputMessage.trim().length() == 0)
+//			inputMessage = "Buddy!";
+//
+//		// If the station does not have a name, return a default.
+//		String wsName = endpointManager.getWsName();
+//		if (wsName == null || wsName.trim().length() == 0)
+//			wsName = "Binas";
+//
+//		// Build a string with a message to return.
+//		StringBuilder builder = new StringBuilder();
+//		builder.append("Hello ").append(inputMessage);
+//		builder.append(" from ").append(wsName);
+//		return builder.toString();
 	}
 
 	@Override

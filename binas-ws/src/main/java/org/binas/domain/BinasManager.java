@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.binas.domain.exception.AlreadyHasBinaException;
 import org.binas.domain.exception.EmailExistsException;
@@ -48,6 +49,18 @@ public class BinasManager {
 	// Singleton -------------------------------------------------------------
 
 	private BinasManager() {
+	}
+
+	/**
+	 * Pings all stations
+	 * @param wsName pingerID
+	 * @return concatenated result
+	 */
+	public String testPing(String wsName) {
+		return getAvailableStations()
+				.stream()
+				.map(station -> station.testPing(wsName))
+				.collect(Collectors.joining("\n", "", "\n"));
 	}
 
 	/**
