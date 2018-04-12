@@ -1,6 +1,7 @@
 
 package org.binas.ws;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.jws.WebService;
@@ -15,7 +16,8 @@ import org.binas.domain.exception.NoBinaAvailException;
 import org.binas.domain.exception.NoBinaRentedException;
 import org.binas.domain.exception.NoCreditException;
 import org.binas.domain.exception.UserNotExistsException;
-import org.binas.station.ws.NoSlotAvail_Exception;
+import org.binas.station.ws.NoSlotAvail_Exception; // FIXME is this correct?!
+import org.binas.station.ws.cli.StationClientException;
 
 /**
  * This class implements the Web Service port type (interface). The annotations
@@ -42,8 +44,18 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public List<StationView> listStations(Integer numberOfStations, CoordinatesView coordinates) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			List<org.binas.station.ws.StationView> temp;
+			temp = BinasManager.getInstance().listStations((int)numberOfStations, buildCoordinatesView(coordinates));
+			List<StationView> list = new ArrayList<>();
+			
+			for ( org.binas.station.ws.StationView view : temp)
+				list.add(buildStationView(view));
+			
+			return list;
+		} catch (StationClientException e) {
+			return null;
+		}
 	}
 
 	@Override
@@ -166,6 +178,14 @@ public class BinasPortImpl implements BinasPortType {
 	/** Helper to convert a domain coordinates to a view. */
 	private CoordinatesView buildCoordinatesView(org.binas.station.ws.CoordinatesView coordinates) {
 		CoordinatesView view = new CoordinatesView();
+		view.setX(coordinates.getX());
+		view.setY(coordinates.getY());
+		return view;
+	}
+
+	/** Helper to convert a view coordinates to doamin coordinates. */
+	private org.binas.station.ws.CoordinatesView buildCoordinatesView(CoordinatesView coordinates) {
+		org.binas.station.ws.CoordinatesView view = new org.binas.station.ws.CoordinatesView();
 		view.setX(coordinates.getX());
 		view.setY(coordinates.getY());
 		return view;

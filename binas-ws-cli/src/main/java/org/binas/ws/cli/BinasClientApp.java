@@ -1,5 +1,10 @@
 package org.binas.ws.cli;
 
+import java.util.List;
+
+import org.binas.ws.CoordinatesView;
+import org.binas.ws.StationView;
+
 public class BinasClientApp {
 
     public static void main(String[] args) throws Exception {
@@ -53,6 +58,16 @@ public class BinasClientApp {
 		 
 		 client.returnBina("T08_Station1","username@domain");
 		 System.out.println("Tried to return bina");
+		 
+		 CoordinatesView coord = new CoordinatesView();
+		 coord.setX(1);
+		 coord.setY(1);
+		 
+		 List<StationView> stations = client.listStations(new Integer(1), coord);
+		 System.out.println("Were stations found?: " + !stations.isEmpty());
+		 
+		 for (StationView s : stations)
+			 System.out.println(s.getFreeDocks());
 	 }
 }
 
