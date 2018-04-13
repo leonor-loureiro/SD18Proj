@@ -15,7 +15,7 @@ import org.junit.Test;
 
 
 /**
- * Test suite
+ * Longer test that aims to check multiple rentals and returns with multiple users
  */
 public class FullIT extends BaseIT {
 	

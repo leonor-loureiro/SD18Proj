@@ -29,6 +29,14 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 
+/**
+ * Domain Root of Binas servers
+ * 
+ * Handles connection and information of the Binas' System
+ * Manages connection to stations and requests from clients
+ * @author T08
+ *
+ */
 public class BinasManager {
 
 	/* Binas Manager ID */
@@ -95,6 +103,11 @@ public class BinasManager {
 		return this.stationWSName;
 	}
 
+	/**
+	 * Checks if station ID matches Binas' Station ID format
+	 * @param stationId
+	 * @return true if matches, false otherwise
+	 */
 	private boolean isValidStationId(String stationId) {
 		return stationId.matches("^" + getStationWSName() + "[a-zA-Z0-9]+$"); 
 	}
@@ -175,6 +188,9 @@ public class BinasManager {
 		throw new EmailExistsException();
 	}
 
+	/**
+	 * clears all stations and user information
+	 */
 	public synchronized void clear() {
 		users.clear();
 		for (StationClient station : getAvailableStations())
@@ -182,10 +198,26 @@ public class BinasManager {
 		
 	}
 
+	/**
+	 * 
+	 * @param email
+	 * @return credit of given user's email
+	 * @throws UserNotExistsException
+	 */
 	public synchronized int getCredit(String email) throws UserNotExistsException {
 		return getUserByEmail(email).getCredit();
 	}
 
+	/**
+	 * Rents a bina from a given stations
+	 * @param stationId
+	 * @param email
+	 * @throws UserNotExistsException
+	 * @throws InvalidStationException
+	 * @throws NoBinaAvailException
+	 * @throws AlreadyHasBinaException
+	 * @throws NoCreditException
+	 */
 	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
 			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
 
@@ -214,6 +246,12 @@ public class BinasManager {
 
 	}
 
+	/**
+	 * Returns information for given station id in view form
+	 * @param stationId
+	 * @return StationView with station's information
+	 * @throws InvalidStationException
+	 */
 	public StationView getInfoStation(String stationId) throws InvalidStationException {
 		
 		if(stationId == null || !isValidStationId(stationId))
@@ -227,6 +265,15 @@ public class BinasManager {
 		}
 	}
 
+	/**
+	 * Returns given bina to the station if associated to proper email
+	 * @param stationId
+	 * @param email user's email
+	 * @throws InvalidStationException
+	 * @throws UserNotExistsException
+	 * @throws NoSlotAvail_Exception
+	 * @throws NoBinaRentedException
+	 */
 	public synchronized void returnBina(String stationId, String email)
 			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
 
@@ -250,7 +297,7 @@ public class BinasManager {
 	}
 
     /**
-     * Initializes / resets a station.
+     * Initializes station with given parameters
      * @param stationId target station
      * @param x
      * @param y
@@ -271,6 +318,9 @@ public class BinasManager {
 		}
 	}
 
+	/**
+	 * @return Available Stations' connection
+	 */
 	private List<StationClient> getAvailableStations() {
 		List<StationClient> clients = new ArrayList<>();
 		try {
@@ -286,11 +336,21 @@ public class BinasManager {
 		return clients;
 	}
 
+	/**
+	 * Sorts Stations views by distance to given coordinate point
+	 * @param stations
+	 * @param coord coordinate point
+	 * @return sorted List
+	 */
 	private List<StationView> sortStationViewsByDistance(List<StationView> stations, CoordinatesView coord){
 		Collections.sort(stations, new StationComparator(coord));
 		return stations;
 	}
 
+	/**
+	 * Comparator class for comparing views based on its distance to a given point
+	 *
+	 */
 	private class StationComparator implements Comparator<StationView> {
         private double x, y;
 
