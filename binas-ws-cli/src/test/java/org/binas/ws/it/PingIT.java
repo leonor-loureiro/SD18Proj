@@ -1,14 +1,6 @@
 package org.binas.ws.it;
 
 import org.junit.Assert;
-
-import org.binas.ws.EmailExists_Exception;
-import org.binas.ws.InvalidEmail_Exception;
-
-import static org.junit.Assert.assertNotNull;
-
-import org.binas.ws.BadInit_Exception;
-import org.binas.ws.UserView;
 import org.junit.Test;
 
 
@@ -17,10 +9,21 @@ import org.junit.Test;
  */
 public class PingIT extends BaseIT {
 
-   
-
     @Test
     public void pingEmptyTest() {
-		assertNotNull(client.testPing("test"));
+        String result = client.testPing("      ");
+        Assert.assertEquals(3, result.split("\n").length);
+    }
+
+    @Test
+    public void pingNullTest() {
+        String result = client.testPing(null);
+        Assert.assertEquals(3, result.split("\n").length);
+    }
+
+    @Test
+    public void pingIDTest() {
+        String result = client.testPing(client.getClass().getName());
+        Assert.assertEquals(3, result.split("\n").length);
     }
 }

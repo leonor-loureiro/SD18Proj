@@ -135,17 +135,22 @@ public class BinasManager {
 	 * @throws StationClientException
 	 */
 	public List<StationView> listStations(int n, CoordinatesView coords) throws StationClientException {
-		List<StationView> clients = new ArrayList<>();
+		if (coords.getX() < 0 || coords.getY() < 0)
+			return new ArrayList<>();
+		List<StationView> stations = new ArrayList<>();
+		List<StationClient> as = getAvailableStations();
 
-		for (StationClient station : getAvailableStations())
-			clients.add(station.getInfo());
+		for (StationClient station : as)
+			stations.add(station.getInfo());
 		
-		clients = sortStationViewsByDistance(clients, coords);
+		stations = sortStationViewsByDistance(stations, coords);
 		
-		if( n > clients.size())
-			n = clients.size() - 1;
+		if( n > stations.size())
+			n = stations.size() - 1;
+		if (n < 0)
+			n = 0;
 		
-		return clients.subList(0, n);
+		return stations.subList(0, n);
 	}
 
     /**
@@ -298,7 +303,7 @@ public class BinasManager {
         public int compare(StationView s1, StationView s2) {
             CoordinatesView c1 = s1.getCoordinate();
             CoordinatesView c2 = s2.getCoordinate();
-            double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
+            double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c1.getY() - this.y, 2);
             double dist2 = Math.pow(c2.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
             return (int) (dist1 - dist2);
         }
