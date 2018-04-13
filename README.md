@@ -9,7 +9,7 @@ Diogo Andrade	84709	diogo.freire.dandrade@gmail.com
 Leonor Loureiro	84736	leonor.filipa@tecnico.ulisboa.pt
 
 ------------------------------------------------------------------------------
-##Instructions for testing:##
+##Instructions for testing:
 
 ###### on project root run install project with:
 	T08-SD18Proj$		mvn install -DskipTests 
