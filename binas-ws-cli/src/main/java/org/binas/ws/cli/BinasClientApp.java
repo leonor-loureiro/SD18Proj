@@ -42,32 +42,33 @@ public class BinasClientApp {
         // the following remote invocations are just basic examples
         // the actual tests are made using JUnit
 
-		 System.out.println("Invoke ping()...");
-		 String result = client.testPing("client");
-		 System.out.print(result);
+//		 System.out.println("Invoke ping()...");
+//		 String result = client.testPing("client");
+//		 System.out.print(result);
 		 
 		 
-		 client.testInit(10);
-		 client.activateUser("username@domain");
-		 int credit = client.getCredit("username@domain");
-		 System.out.println("username@domain credit = " + credit);
+//		 client.testInit(20);
+//		 System.out.println(client.activateUser("username@domain").getEmail());
+//		 
+//		 int credit = client.getCredit("username@domain");
+//		 System.out.println("username@domain credit = " + credit);
 		 
-		 client.rentBina("T08_Station1","username@domain");
-		 
-		 System.out.println(client.getInfoStation("T08_Station1").getFreeDocks());
-		 
-		 client.returnBina("T08_Station1","username@domain");
-		 System.out.println("Tried to return bina");
-		 
-		 CoordinatesView coord = new CoordinatesView();
-		 coord.setX(1);
-		 coord.setY(1);
-		 
-		 List<StationView> stations = client.listStations(new Integer(1), coord);
-		 System.out.println("Were stations found?: " + !stations.isEmpty());
-		 
-		 for (StationView s : stations)
-			 System.out.println(s.getFreeDocks());
+//		 client.rentBina("T08_Station1","username@domain");
+//		 
+//		 System.out.println(client.getInfoStation("T08_Station1").getFreeDocks());
+//		 
+//		 client.returnBina("T08_Station1","username@domain");
+//		 System.out.println("Tried to return bina");
+//		 
+//		 CoordinatesView coord = new CoordinatesView();
+//		 coord.setX(1);
+//		 coord.setY(1);
+//		 
+//		 List<StationView> stations = client.listStations(new Integer(1), coord);
+//		 System.out.println("Were stations found?: " + !stations.isEmpty());
+//		 
+//		 for (StationView s : stations)
+//			 System.out.println(s.getFreeDocks());
 	 }
 }
 
