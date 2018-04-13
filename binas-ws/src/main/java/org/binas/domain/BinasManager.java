@@ -71,11 +71,11 @@ public class BinasManager {
 		return this.id;
 	}
 
-	public void setUserInitialPoints(int userInitialPoints) {
+	public synchronized void setUserInitialPoints(int userInitialPoints) {
 		this.userInitialPoints = userInitialPoints;
 	}
 
-	public int getUserInitialPoints() {
+	public synchronized int getUserInitialPoints() {
 		return this.userInitialPoints;
 	}
 
@@ -113,7 +113,7 @@ public class BinasManager {
      * @return Found user
      * @throws UserNotExistsException if not found
      */
-	public User getUserByEmail(String email) throws UserNotExistsException {
+	public synchronized User getUserByEmail(String email) throws UserNotExistsException {
 		for (User user : users) {
 			if (user.getEmail().equals(email))
 				return user;
@@ -151,7 +151,7 @@ public class BinasManager {
      * @throws InvalidEmailException
      * @throws EmailExistsException
      */
-	public User activateUser(String email) throws InvalidEmailException, EmailExistsException {
+	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
 		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
 			throw new InvalidEmailException();
 		}
@@ -166,15 +166,15 @@ public class BinasManager {
 		throw new EmailExistsException();
 	}
 
-	public void clearUsers() {
+	public synchronized void clearUsers() {
 		users.clear();
 	}
 
-	public int getCredit(String email) throws UserNotExistsException {
+	public synchronized int getCredit(String email) throws UserNotExistsException {
 		return getUserByEmail(email).getCredit();
 	}
 
-	public void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
+	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
 			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
 
 		User user = getUserByEmail(email);
@@ -207,7 +207,7 @@ public class BinasManager {
 		}
 	}
 
-	public void returnBina(String stationId, String email)
+	public synchronized void returnBina(String stationId, String email)
 			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
 
 		User user = getUserByEmail(email);

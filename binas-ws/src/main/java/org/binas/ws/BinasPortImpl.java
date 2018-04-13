@@ -83,7 +83,7 @@ public class BinasPortImpl implements BinasPortType {
 	@Override
 	public UserView activateUser(String email) throws EmailExists_Exception, InvalidEmail_Exception {
 		try {
-			BinasManager.getInstance().activateUser(email);
+			return buildUserView(BinasManager.getInstance().activateUser(email));
 		} catch (EmailExistsException eee) {
 			throwEmailExists("activateUser: email taken");
 		} catch (InvalidEmailException iee) {
@@ -120,14 +120,19 @@ public class BinasPortImpl implements BinasPortType {
 			throws FullStation_Exception, InvalidStation_Exception, NoBinaRented_Exception, UserNotExists_Exception {
 		try {
 			BinasManager.getInstance().returnBina(stationId, email);
+			
 		} catch (InvalidStationException e) {
 			throwInvalidStation("Station "+ stationId+ "does not exists.");
+			
 		} catch (UserNotExistsException e) {
 			throwUserNotExists("No user " + email + ".");
+			
 		} catch (NoSlotAvail_Exception e) {
 			throwFullStation("Station " + stationId+ "is full.");
+			
 		} catch (NoBinaRentedException e) {
 			throwNoBinaRented("User " + email + " has no bina rented to return.");
+			
 		}
 
 	}
@@ -156,6 +161,7 @@ public class BinasPortImpl implements BinasPortType {
 	@Override
 	public void testClear() {
 		BinasManager.getInstance().clearUsers();
+		BinasManager.getInstance().setUserInitialPoints(0);
 	}
 
 	@Override
