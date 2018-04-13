@@ -95,6 +95,10 @@ public class BinasManager {
 		return this.stationWSName;
 	}
 
+	private boolean isValidStationId(String stationId) {
+		return stationId.matches("^" + getStationWSName() + "[a-zA-Z0-9]+$"); 
+	}
+	
     /**
      * Pings all stations
      * @param wsName pingerID
@@ -166,8 +170,11 @@ public class BinasManager {
 		throw new EmailExistsException();
 	}
 
-	public synchronized void clearUsers() {
+	public synchronized void clear() {
 		users.clear();
+		for (StationClient station : getAvailableStations())
+			station.testClear();
+		
 	}
 
 	public synchronized int getCredit(String email) throws UserNotExistsException {
@@ -181,9 +188,12 @@ public class BinasManager {
 		if (user.getHasBina()) {
 			throw new AlreadyHasBinaException();
 		}
-		if (user.getCredit() < 0) {
+		if (user.getCredit() < 1) {
 			throw new NoCreditException();
 		}
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			client.getBina();
@@ -285,4 +295,6 @@ public class BinasManager {
             return (int) (dist1 - dist2);
         }
     }
+	
+	
 }

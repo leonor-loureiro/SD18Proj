@@ -160,7 +160,7 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public void testClear() {
-		BinasManager.getInstance().clearUsers();
+		BinasManager.getInstance().clear();
 		BinasManager.getInstance().setUserInitialPoints(0);
 	}
 
