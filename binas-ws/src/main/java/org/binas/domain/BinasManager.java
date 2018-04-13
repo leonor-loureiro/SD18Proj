@@ -197,6 +197,7 @@ public class BinasManager {
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			client.getBina();
+			user.setCredit(user.getCredit() - 1);
 			user.setHasBina(true);
 
 		} catch (NoBinaAvail_Exception nbae) {
@@ -209,6 +210,10 @@ public class BinasManager {
 	}
 
 	public StationView getInfoStation(String stationId) throws InvalidStationException {
+		
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			return client.getInfo();
@@ -225,6 +230,9 @@ public class BinasManager {
 			throw new NoBinaRentedException();
 		}
 
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			int bonus = client.returnBina();

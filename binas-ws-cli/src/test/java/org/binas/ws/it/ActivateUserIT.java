@@ -98,7 +98,10 @@ public class ActivateUserIT extends BaseIT {
 		client.activateUser(".@domain");
     }
     
-    
+    @Test(expected=InvalidEmail_Exception.class)
+    public void invalidEmail_10() throws EmailExists_Exception, InvalidEmail_Exception {
+		client.activateUser(null);
+    }
     /* Test user unique */
     
     @Test(expected=EmailExists_Exception.class)

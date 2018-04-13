@@ -14,6 +14,7 @@ import org.binas.station.ws.StationService;
 import org.binas.station.ws.StationView;
 
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 
 /**
  * Client port wrapper.
@@ -73,10 +74,11 @@ public class StationClient implements StationPortType {
 		try {
 			UDDINaming uddiNaming = new UDDINaming(uddiURL);
 			wsURL = uddiNaming.lookup(wsName);
-		}catch(Exception e) {
+		}catch(UDDINamingException e) {
 			if(verbose) {
 				System.out.printf("Caught exception on uddiLookup: %s%n", e);
 			}
+			throw new StationClientException();
 		}
 		if(wsURL == null) {
 			System.out.println(wsName + ": not found!");
