@@ -33,6 +33,10 @@ public class User {
 		return credit;
 	}
 
+	public synchronized int removeOneCredit() {
+		return credit--;
+	}
+	
 	public synchronized void receiveBonus(int bonus) {
 		this.credit += bonus;
 	}

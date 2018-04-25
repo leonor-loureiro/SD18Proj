@@ -29,6 +29,14 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 
+/**
+ * Domain Root of Binas servers
+ * 
+ * Handles connection and information of the Binas' System
+ * Manages connection to stations and requests from clients
+ * @author T08
+ *
+ */
 public class BinasManager {
 
 	/* Binas Manager ID */
@@ -95,6 +103,15 @@ public class BinasManager {
 		return this.stationWSName;
 	}
 
+	/**
+	 * Checks if station ID matches Binas' Station ID format
+	 * @param stationId
+	 * @return true if matches, false otherwise
+	 */
+	private boolean isValidStationId(String stationId) {
+		return stationId.matches("^" + getStationWSName() + "[a-zA-Z0-9]+$"); 
+	}
+	
     /**
      * Pings all stations
      * @param wsName pingerID
@@ -131,17 +148,22 @@ public class BinasManager {
 	 * @throws StationClientException
 	 */
 	public List<StationView> listStations(int n, CoordinatesView coords) throws StationClientException {
-		List<StationView> clients = new ArrayList<>();
+		if (coords.getX() < 0 || coords.getY() < 0)
+			return new ArrayList<>();
+		List<StationView> stations = new ArrayList<>();
+		List<StationClient> as = getAvailableStations();
 
-		for (StationClient station : getAvailableStations())
-			clients.add(station.getInfo());
+		for (StationClient station : as)
+			stations.add(station.getInfo());
 		
-		clients = sortStationViewsByDistance(clients, coords);
+		stations = sortStationViewsByDistance(stations, coords);
 		
-		if( n > clients.size())
-			n = clients.size() - 1;
+		if( n > stations.size())
+			n = stations.size() - 1;
+		if (n < 0)
+			n = 0;
 		
-		return clients.subList(0, n);
+		return stations.subList(0, n);
 	}
 
     /**
@@ -166,14 +188,36 @@ public class BinasManager {
 		throw new EmailExistsException();
 	}
 
-	public synchronized void clearUsers() {
+	/**
+	 * clears all stations and user information
+	 */
+	public synchronized void clear() {
 		users.clear();
+		for (StationClient station : getAvailableStations())
+			station.testClear();
+		
 	}
 
+	/**
+	 * 
+	 * @param email
+	 * @return credit of given user's email
+	 * @throws UserNotExistsException
+	 */
 	public synchronized int getCredit(String email) throws UserNotExistsException {
 		return getUserByEmail(email).getCredit();
 	}
 
+	/**
+	 * Rents a bina from a given stations
+	 * @param stationId
+	 * @param email
+	 * @throws UserNotExistsException
+	 * @throws InvalidStationException
+	 * @throws NoBinaAvailException
+	 * @throws AlreadyHasBinaException
+	 * @throws NoCreditException
+	 */
 	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
 			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
 
@@ -181,12 +225,16 @@ public class BinasManager {
 		if (user.getHasBina()) {
 			throw new AlreadyHasBinaException();
 		}
-		if (user.getCredit() < 0) {
+		if (user.getCredit() < 1) {
 			throw new NoCreditException();
 		}
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			client.getBina();
+			user.setCredit(user.getCredit() - 1);
 			user.setHasBina(true);
 
 		} catch (NoBinaAvail_Exception nbae) {
@@ -198,7 +246,17 @@ public class BinasManager {
 
 	}
 
+	/**
+	 * Returns information for given station id in view form
+	 * @param stationId
+	 * @return StationView with station's information
+	 * @throws InvalidStationException
+	 */
 	public StationView getInfoStation(String stationId) throws InvalidStationException {
+		
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			return client.getInfo();
@@ -207,6 +265,15 @@ public class BinasManager {
 		}
 	}
 
+	/**
+	 * Returns given bina to the station if associated to proper email
+	 * @param stationId
+	 * @param email user's email
+	 * @throws InvalidStationException
+	 * @throws UserNotExistsException
+	 * @throws NoSlotAvail_Exception
+	 * @throws NoBinaRentedException
+	 */
 	public synchronized void returnBina(String stationId, String email)
 			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
 
@@ -215,6 +282,9 @@ public class BinasManager {
 			throw new NoBinaRentedException();
 		}
 
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			int bonus = client.returnBina();
@@ -227,7 +297,7 @@ public class BinasManager {
 	}
 
     /**
-     * Initializes / resets a station.
+     * Initializes station with given parameters
      * @param stationId target station
      * @param x
      * @param y
@@ -248,6 +318,9 @@ public class BinasManager {
 		}
 	}
 
+	/**
+	 * @return Available Stations' connection
+	 */
 	private List<StationClient> getAvailableStations() {
 		List<StationClient> clients = new ArrayList<>();
 		try {
@@ -263,11 +336,21 @@ public class BinasManager {
 		return clients;
 	}
 
+	/**
+	 * Sorts Stations views by distance to given coordinate point
+	 * @param stations
+	 * @param coord coordinate point
+	 * @return sorted List
+	 */
 	private List<StationView> sortStationViewsByDistance(List<StationView> stations, CoordinatesView coord){
 		Collections.sort(stations, new StationComparator(coord));
 		return stations;
 	}
 
+	/**
+	 * Comparator class for comparing views based on its distance to a given point
+	 *
+	 */
 	private class StationComparator implements Comparator<StationView> {
         private double x, y;
 
@@ -280,9 +363,11 @@ public class BinasManager {
         public int compare(StationView s1, StationView s2) {
             CoordinatesView c1 = s1.getCoordinate();
             CoordinatesView c2 = s2.getCoordinate();
-            double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
+            double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c1.getY() - this.y, 2);
             double dist2 = Math.pow(c2.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
             return (int) (dist1 - dist2);
         }
     }
+	
+	
 }

@@ -24,7 +24,7 @@ public class BinasApp {
 		BinasManager.getInstance().setStationWSName(stationWSName);
 
 
-		System.out.println(BinasApp.class.getSimpleName() + " running");
+		System.out.println(BinasApp.class.getSimpleName() + " running with stations name: " + stationWSName);
 
 		
 		try {

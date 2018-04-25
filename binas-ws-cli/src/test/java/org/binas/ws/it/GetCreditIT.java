@@ -22,7 +22,7 @@ public class GetCreditIT extends BaseIT {
     	client.testInit(10);
 		client.activateUser("username@domain");
 		int credit = client.getCredit("username@domain");
-		Assert.assertEquals(10, credit,0);
+		Assert.assertEquals(10, credit);
     }
     
     @Test
@@ -34,7 +34,7 @@ public class GetCreditIT extends BaseIT {
 		client.activateUser("username@domain");
 		
 		int credit = client.getCredit("username@domain");
-		Assert.assertEquals(10, credit,0);
+		Assert.assertEquals(10, credit);
     }
     
     @Test
@@ -49,7 +49,7 @@ public class GetCreditIT extends BaseIT {
 		client.activateUser("username@domain.sdis");
 		
 		int credit = client.getCredit("username@domain");
-		Assert.assertEquals(10, credit,0);
+		Assert.assertEquals(10, credit);
     }
     
     @Test(expected=UserNotExists_Exception.class)
@@ -70,7 +70,12 @@ public class GetCreditIT extends BaseIT {
 		client.getCredit("username@domain");
     }
     
-    
+    @Test(expected=UserNotExists_Exception.class)
+    public void userNotExists_3() throws EmailExists_Exception, InvalidEmail_Exception, BadInit_Exception, UserNotExists_Exception {
+    	client.testInit(20);
+		client.activateUser("username.sdis@domain");
+		client.getCredit(null);
+    }
    
     
     @After

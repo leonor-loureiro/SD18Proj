@@ -24,6 +24,7 @@ import org.binas.ws.UserNotExists_Exception;
 import org.binas.ws.UserView;
 
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 
 /**
  * Client.
@@ -82,10 +83,11 @@ public class BinasClient implements BinasPortType {
 		try {
 			UDDINaming uddiNaming = new UDDINaming(uddiURL);
 			wsURL = uddiNaming.lookup(wsName);
-		} catch (Exception e) {
+		} catch (UDDINamingException e) {
 			if (verbose) {
 				System.out.printf("Caught exception on uddiLookup: %s%n", e);
 			}
+			throw new BinasClientException();
 		}
 		if (wsURL == null) {
 			System.out.println(wsName + ": not found!");

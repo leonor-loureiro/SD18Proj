@@ -110,7 +110,7 @@ public class BinasPortImpl implements BinasPortType {
 			throwUserNotExists("No user " + email + ".");
 			
 		}catch(NoBinaAvailException nbae) {
-			throwNoBinaAvail("No bina available in statio " +  stationId + ".");
+			throwNoBinaAvail("No bina available in station " +  stationId + ".");
 		}
 
 	}
@@ -122,13 +122,13 @@ public class BinasPortImpl implements BinasPortType {
 			BinasManager.getInstance().returnBina(stationId, email);
 			
 		} catch (InvalidStationException e) {
-			throwInvalidStation("Station "+ stationId+ "does not exists.");
+			throwInvalidStation("Station "+ stationId+ " does not exists.");
 			
 		} catch (UserNotExistsException e) {
 			throwUserNotExists("No user " + email + ".");
 			
 		} catch (NoSlotAvail_Exception e) {
-			throwFullStation("Station " + stationId+ "is full.");
+			throwFullStation("Station " + stationId+ " is full.");
 			
 		} catch (NoBinaRentedException e) {
 			throwNoBinaRented("User " + email + " has no bina rented to return.");
@@ -160,7 +160,7 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public void testClear() {
-		BinasManager.getInstance().clearUsers();
+		BinasManager.getInstance().clear();
 		BinasManager.getInstance().setUserInitialPoints(0);
 	}
 
