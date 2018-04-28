@@ -159,7 +159,7 @@ public class BinasManager {
 		stations = sortStationViewsByDistance(stations, coords);
 		
 		if( n > stations.size())
-			n = stations.size() - 1;
+			n = stations.size();
 		if (n < 0)
 			n = 0;
 		

@@ -44,17 +44,21 @@ public class BinasPortImpl implements BinasPortType {
 
 	@Override
 	public List<StationView> listStations(Integer numberOfStations, CoordinatesView coordinates) {
+		List<StationView> list = new ArrayList<>();
+		if (numberOfStations == null) {
+			return list;
+		}
+
 		try {
 			List<org.binas.station.ws.StationView> temp;
 			temp = BinasManager.getInstance().listStations((int)numberOfStations, buildCoordinatesView(coordinates));
-			List<StationView> list = new ArrayList<>();
-			
+
 			for ( org.binas.station.ws.StationView view : temp)
 				list.add(buildStationView(view));
 			
 			return list;
 		} catch (StationClientException e) {
-			return null;
+			return list;
 		}
 	}
 
