@@ -73,6 +73,7 @@
 				<configuration>
 					<!-- http://www.mojohaus.org/jaxws-maven-plugin/wsimport-mojo.html -->
 					<wsdlDirectory>${basedir}/src/main/resources</wsdlDirectory>
+					<wsdl.filename>station.2_0.wsdl</wsdl.filename>
 				</configuration>
 				<dependencies>					
 					<dependency>

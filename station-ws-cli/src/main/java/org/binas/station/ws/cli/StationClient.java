@@ -7,11 +7,13 @@ import java.util.Map;
 import javax.xml.ws.BindingProvider;
 
 import org.binas.station.ws.BadInit_Exception;
+import org.binas.station.ws.BalanceView;
 import org.binas.station.ws.NoBinaAvail_Exception;
 import org.binas.station.ws.NoSlotAvail_Exception;
 import org.binas.station.ws.StationPortType;
 import org.binas.station.ws.StationService;
 import org.binas.station.ws.StationView;
+import org.binas.station.ws.UserNotExists_Exception;
 
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
@@ -123,6 +125,16 @@ public class StationClient implements StationPortType {
 	 public int returnBina() throws NoSlotAvail_Exception {
 		 return port.returnBina();
 	 }
+	 
+	 @Override
+	public BalanceView getBalance(String email) throws UserNotExists_Exception {
+		return port.getBalance(email);
+	}
+
+	@Override
+	public void setBalance(String email, int value, String tag) {
+		port.setBalance(email, value, tag);
+	}
 
 	// test control operations ------------------------------------------------
 

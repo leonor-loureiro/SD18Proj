@@ -15,7 +15,7 @@ import org.binas.station.domain.exception.NoSlotAvailException;
 
 @WebService(
 	endpointInterface = "org.binas.station.ws.StationPortType",
-	wsdlLocation = "station.1_0.wsdl",
+	wsdlLocation = "station.2_0.wsdl",
 	name ="StationWebService",
 	portName = "StationPort",	
 	targetNamespace="http://ws.station.binas.org/",
@@ -63,7 +63,22 @@ public class StationPortImpl implements StationPortType {
 			 throwNoBinaAvail("Erro");
 		 }
 	 }
-
+	 
+	/** Return balance value and tag of user */
+	@Override
+	public BalanceView getBalance(String email) throws
+ 		UserNotExists_Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	/** Update balance value and tag of user */
+	@Override
+	public void setBalance(String email, int value, String tag) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	// Test Control operations -----------------------------------------------
 
 	 /** Diagnostic operation to check if service is running. */
@@ -122,6 +137,14 @@ public class StationPortImpl implements StationPortType {
 		 CoordinatesView view = new CoordinatesView();
 		 view.setX(coordinates.getX());
 		 view.setY(coordinates.getY());
+		 return view;
+	 }
+	 
+	 /** Helper to covert balance value and tag to a view. */
+	 private BalanceView buildBalanceView(int value, String tag) {
+		 BalanceView view = new BalanceView();
+		 view.setValue(value);
+		 view.setTag(tag);
 		 return view;
 	 }
 
