@@ -45,14 +45,8 @@ public class BinasManager {
 	/* UDDI url */
 	private String uddiURL;
 
-	/* Binas users */
-	private Set<User> users = new HashSet<>();
-
 	/* Station name org template */
 	private String stationWSName;
-
-	/* New user initial credit */
-	private int userInitialPoints = 0;
 
 	// Singleton -------------------------------------------------------------
 
@@ -79,13 +73,10 @@ public class BinasManager {
 		return this.id;
 	}
 
-	public synchronized void setUserInitialPoints(int userInitialPoints) {
-		this.userInitialPoints = userInitialPoints;
+	public void setUserInitialPoints(int userInitialPoints) {
+		UserManager.getInstance().setUserInitialPoints(userInitialPoints);
 	}
 
-	public synchronized int getUserInitialPoints() {
-		return this.userInitialPoints;
-	}
 
 	public void setUddiUrl(String uddiUrl) {
 		this.uddiURL = uddiUrl;
@@ -131,11 +122,7 @@ public class BinasManager {
      * @throws UserNotExistsException if not found
      */
 	public synchronized User getUserByEmail(String email) throws UserNotExistsException {
-		for (User user : users) {
-			if (user.getEmail().equals(email))
-				return user;
-		}
-		throw new UserNotExistsException();
+		return UserManager.getInstance().getUserByEmail(email);
 	}
 	
 	/**
@@ -174,25 +161,14 @@ public class BinasManager {
      * @throws EmailExistsException
      */
 	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
-		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
-			throw new InvalidEmailException();
-		}
-		try {
-			getUserByEmail(email);
-
-		} catch (UserNotExistsException unee) {
-			User user = new User(email, false, userInitialPoints);
-			users.add(user);
-			return user;
-		}
-		throw new EmailExistsException();
+		return UserManager.getInstance().activateUser(email);
 	}
 
 	/**
 	 * clears all stations and user information
 	 */
 	public synchronized void clear() {
-		users.clear();
+		UserManager.getInstance().clear();
 		for (StationClient station : getAvailableStations())
 			station.testClear();
 		
