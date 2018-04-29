@@ -132,7 +132,7 @@ public class StationClient implements StationPortType {
 	}
 
 	@Override
-	public void setBalance(String email, int value, String tag) {
+	public void setBalance(String email, int value, int tag) {
 		port.setBalance(email, value, tag);
 	}
 

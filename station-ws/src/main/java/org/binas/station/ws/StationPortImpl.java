@@ -2,6 +2,7 @@ package org.binas.station.ws;
 
 import javax.jws.WebService;
 
+import org.binas.station.domain.Balance;
 import org.binas.station.domain.Coordinates;
 import org.binas.station.domain.Station;
 import org.binas.station.domain.exception.BadInitException;
@@ -74,7 +75,7 @@ public class StationPortImpl implements StationPortType {
 	
 	/** Update balance value and tag of user */
 	@Override
-	public void setBalance(String email, int value, String tag) {
+	public void setBalance(String email, int value, int tag) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -141,10 +142,10 @@ public class StationPortImpl implements StationPortType {
 	 }
 	 
 	 /** Helper to covert balance value and tag to a view. */
-	 private BalanceView buildBalanceView(int value, String tag) {
+	 private BalanceView buildBalanceView(Balance balance) {
 		 BalanceView view = new BalanceView();
-		 view.setValue(value);
-		 view.setTag(tag);
+		 view.setValue(balance.getValue());
+		 view.setTag(balance.getTag());
 		 return view;
 	 }
 
