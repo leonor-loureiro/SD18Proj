@@ -39,8 +39,9 @@ public class UserManager {
 	}
 	
 	/**
+	 * Checks if user exists, and if so returns its credit and associated tag
 	 * @param email
-	 * @return 
+	 * @return user credit and tag
 	 * @throws UserNotExistsException
 	 */
 	public synchronized Balance getBalance(String email) throws UserNotExistsException {
@@ -56,6 +57,8 @@ public class UserManager {
 	}
 	
 	/**
+	 * If user exists, updates its credit and associated tag.
+	 * If not, adds new user.
 	 * @param email
 	 * @param credit
 	 * @param tag

@@ -1,5 +1,6 @@
 package org.binas.station.domain;
 
+/* Class to store user credit and tag */
 public class Balance {
 	private int value;
 	private int tag;

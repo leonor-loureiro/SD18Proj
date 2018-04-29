@@ -5,9 +5,11 @@ import javax.jws.WebService;
 import org.binas.station.domain.Balance;
 import org.binas.station.domain.Coordinates;
 import org.binas.station.domain.Station;
+import org.binas.station.domain.UserManager;
 import org.binas.station.domain.exception.BadInitException;
 import org.binas.station.domain.exception.NoBinaAvailException;
 import org.binas.station.domain.exception.NoSlotAvailException;
+import org.binas.station.domain.exception.UserNotExistsException;
 
 /**
  * This class implements the Web Service port type (interface). The annotations
@@ -69,14 +71,20 @@ public class StationPortImpl implements StationPortType {
 	@Override
 	public BalanceView getBalance(String email) throws
  		UserNotExists_Exception {
-		// TODO Auto-generated method stub
+		try {
+			buildBalanceView(
+					UserManager.getInstance().getBalance(email)
+			);
+		}catch(UserNotExistsException unee) {
+			throwUserNotExits("No user with given email");
+		}
 		return null;
 	}
 	
 	/** Update balance value and tag of user */
 	@Override
 	public void setBalance(String email, int value, int tag) {
-		// TODO Auto-generated method stub
+		UserManager.getInstance().setBalance(email, value, tag);
 		
 	}
 	
@@ -172,6 +180,13 @@ public class StationPortImpl implements StationPortType {
 		 BadInit faultInfo = new BadInit();
 		 faultInfo.message = message;
 		 throw new BadInit_Exception(message, faultInfo);
+	 }
+	 
+	 /** Helper to throw a new UserNotExits exception. */
+	 private void throwUserNotExits(final String message) throws UserNotExists_Exception {
+		 UserNotExists faultInfo = new UserNotExists();
+		 faultInfo.message = message;
+		 throw new UserNotExists_Exception(message, faultInfo);
 	 }
 
 }
