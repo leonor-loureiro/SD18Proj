@@ -56,10 +56,18 @@ public class listStationsIT extends BaseIT{
         cv.setX(0);
         cv.setY(0);
         List<StationView> result = client.listStations(3, cv);
-        result.stream().forEach(o -> System.out.println(o.getId()));
         Assert.assertEquals(stationId1, result.remove(0).getId());
         Assert.assertEquals(stationId2, result.remove(0).getId());
         Assert.assertEquals(stationId3, result.remove(0).getId());
+    }
+
+    @Test
+    public void test4Stations() {
+        CoordinatesView cv = new CoordinatesView();
+        cv.setX(0);
+        cv.setY(0);
+        List<StationView> result = client.listStations(4, cv);
+        Assert.assertEquals(3, result.size());
     }
 
     @Test
@@ -88,6 +96,15 @@ public class listStationsIT extends BaseIT{
         cv.setX(-1);
         cv.setY(-3);
         List<StationView> result = client.listStations(0, cv);
+        Assert.assertEquals(0, result.size());
+    }
+
+    @Test
+    public void testNullValue() {
+        CoordinatesView cv = new CoordinatesView();
+        cv.setX(80);
+        cv.setY(20);
+        List<StationView> result = client.listStations(null, cv);
         Assert.assertEquals(0, result.size());
     }
 
