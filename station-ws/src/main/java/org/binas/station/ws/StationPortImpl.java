@@ -72,7 +72,7 @@ public class StationPortImpl implements StationPortType {
 	public BalanceView getBalance(String email) throws
  		UserNotExists_Exception {
 		try {
-			buildBalanceView(
+			return buildBalanceView(
 					UserManager.getInstance().getBalance(email)
 			);
 		}catch(UserNotExistsException unee) {
@@ -113,6 +113,7 @@ public class StationPortImpl implements StationPortType {
 	 @Override
 	 public void testClear() {
 		 Station.getInstance().reset();
+		 UserManager.getInstance().reset();
 	 }
 	
 	 /** Set station variables with specific values. */

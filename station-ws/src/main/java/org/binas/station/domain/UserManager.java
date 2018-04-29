@@ -74,4 +74,8 @@ public class UserManager {
 			users.add(new User(email, credit, tag));
 		}
 	}
+	
+	public void reset() {
+		users.clear();
+	}
 }
