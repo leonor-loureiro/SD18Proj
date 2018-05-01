@@ -196,8 +196,19 @@ public class BinasManager {
 			int credit = balance.getValue();
 			int tag = balance.getTag();
 			
-			//Update user remote replicas
-			writeback(email, credit, tag);
+			boolean doWriteback = false;
+			// Checks if remote replicas not all up to date
+			for(BalanceView b : userInfo) {
+				if(b.getTag() != balance.getTag()) {
+					doWriteback = true;
+					break;
+				}
+			}
+			
+			if(doWriteback) {
+				//Update user remote replicas
+				writeback(email, credit, tag);	
+			}
 			
 			// Update user cache
 			return UserManager.getInstance().activateUser(email,credit, tag);
