@@ -3,6 +3,7 @@ package org.binas.station.ws.it;
 import static org.junit.Assert.assertEquals;
 
 import org.binas.station.ws.BalanceView;
+import org.binas.station.ws.InvalidEmail_Exception;
 import org.binas.station.ws.UserNotExists_Exception;
 import org.junit.After;
 import org.junit.Test;
@@ -15,7 +16,7 @@ public class GetBalanceIT extends BaseIT {
 	
 	/* Station has replica of user. */
 	@Test
-	public void sucess() throws UserNotExists_Exception {
+	public void sucess() throws UserNotExists_Exception, InvalidEmail_Exception {
 		client.setBalance("user@domain", 10, 0);
 		BalanceView balance = client.getBalance("user@domain");
 		assertEquals(10, balance.getValue());

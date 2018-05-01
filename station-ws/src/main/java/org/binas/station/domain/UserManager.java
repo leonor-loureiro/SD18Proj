@@ -3,6 +3,7 @@ package org.binas.station.domain;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.binas.station.domain.exception.InvalidEmailException;
 import org.binas.station.domain.exception.UserNotExistsException;
 
 
@@ -23,6 +24,20 @@ public class UserManager {
 
 	public static synchronized UserManager getInstance() {
 		return SingletonHolder.INSTANCE;
+	}
+	
+	/**
+	 * Adds regist of new user
+	 * @param email
+	 * @param credit
+	 * @param tag
+	 * @throws InvalidEmailException
+	 */
+	public synchronized void activateUser(String email, int credit, int tag) throws InvalidEmailException {
+		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
+			throw new InvalidEmailException();
+		}
+		users.add(new User(email, credit, tag));
 	}
 	
 	/**
@@ -62,16 +77,19 @@ public class UserManager {
 	 * @param email
 	 * @param credit
 	 * @param tag
+	 * @throws InvalidEmailException 
 	 */
-	public synchronized void setBalance(String email, int credit, int tag) {
+	public synchronized void setBalance(String email, int credit, int tag) throws InvalidEmailException {
 		User user = getUserByEmail(email);
 		
 		if(user != null) {
+			if(user.getTag() >= tag) 
+				return;
 			user.setCredit(credit);
 			user.setTag(tag);
 			
 		}else {
-			users.add(new User(email, credit, tag));
+			activateUser(email, credit, tag);
 		}
 	}
 	

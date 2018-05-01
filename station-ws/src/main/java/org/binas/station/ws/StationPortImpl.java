@@ -7,6 +7,7 @@ import org.binas.station.domain.Coordinates;
 import org.binas.station.domain.Station;
 import org.binas.station.domain.UserManager;
 import org.binas.station.domain.exception.BadInitException;
+import org.binas.station.domain.exception.InvalidEmailException;
 import org.binas.station.domain.exception.NoBinaAvailException;
 import org.binas.station.domain.exception.NoSlotAvailException;
 import org.binas.station.domain.exception.UserNotExistsException;
@@ -81,10 +82,15 @@ public class StationPortImpl implements StationPortType {
 		return null;
 	}
 	
-	/** Update balance value and tag of user */
+	/** Update balance value and tag of user 
+	 * @throws org.binas.station.ws.InvalidEmail_Exception */
 	@Override
-	public void setBalance(String email, int value, int tag) {
-		UserManager.getInstance().setBalance(email, value, tag);
+	public void setBalance(String email, int value, int tag) throws InvalidEmail_Exception {
+		try {
+			UserManager.getInstance().setBalance(email, value, tag);
+		}catch(InvalidEmailException iee) {
+			throwInvalidEmail("User email format invalid.");
+		}
 		
 	}
 	
@@ -189,5 +195,12 @@ public class StationPortImpl implements StationPortType {
 		 faultInfo.message = message;
 		 throw new UserNotExists_Exception(message, faultInfo);
 	 }
+	 
+	 /** Helper to throw a new InvalidEmail exception. */
+		private void throwInvalidEmail(final String message) throws InvalidEmail_Exception {
+			InvalidEmail faultInfo = new InvalidEmail();
+			faultInfo.message = message;
+			throw new InvalidEmail_Exception(message, faultInfo);
+		}
 
 }

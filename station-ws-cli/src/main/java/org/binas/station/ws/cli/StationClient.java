@@ -8,6 +8,7 @@ import javax.xml.ws.BindingProvider;
 
 import org.binas.station.ws.BadInit_Exception;
 import org.binas.station.ws.BalanceView;
+import org.binas.station.ws.InvalidEmail_Exception;
 import org.binas.station.ws.NoBinaAvail_Exception;
 import org.binas.station.ws.NoSlotAvail_Exception;
 import org.binas.station.ws.StationPortType;
@@ -132,7 +133,7 @@ public class StationClient implements StationPortType {
 	}
 
 	@Override
-	public void setBalance(String email, int value, int tag) {
+	public void setBalance(String email, int value, int tag) throws InvalidEmail_Exception {
 		port.setBalance(email, value, tag);
 	}
 
