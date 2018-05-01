@@ -6,11 +6,13 @@ public class User {
 	private String email;
 	private boolean hasBina;
 	private int credit;
+	private int tag;
 
-	public User(String email, boolean hasBina, int credit) {
+	public User(String email, boolean hasBina, int credit, int tag) {
 			this.email = email;
 			this.hasBina = hasBina;
 			this.credit = credit;
+			this.tag = tag;
 	}
 	
 	public String getEmail() {
@@ -43,6 +45,14 @@ public class User {
 	
 	public synchronized void setCredit(int credit) {
 		this.credit = credit;
+	}
+	
+	public synchronized int getTag() {
+		return tag;
+	}
+
+	public synchronized void setTag(int tag) {
+		this.tag = tag;
 	}
 
 

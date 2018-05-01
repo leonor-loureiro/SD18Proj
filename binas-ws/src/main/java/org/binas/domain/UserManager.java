@@ -15,6 +15,7 @@ public class UserManager {
 	/* New user initial credit */
 	private int userInitialPoints = 0;
 	
+	
 	private UserManager() {
 		
 	}
@@ -53,6 +54,7 @@ public class UserManager {
 		throw new UserNotExistsException();
 	}
 	
+	
 	/**
      * Activates user
      * @param email used to register the new user
@@ -60,19 +62,15 @@ public class UserManager {
      * @throws InvalidEmailException
      * @throws EmailExistsException
      */
-	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
+	public synchronized User activateUser(String email, int credit, int tag) throws InvalidEmailException, EmailExistsException {
 		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
 			throw new InvalidEmailException();
 		}
-		try {
-			getUserByEmail(email);
-
-		} catch (UserNotExistsException unee) {
-			User user = new User(email, false, userInitialPoints);
-			users.add(user);
-			return user;
-		}
-		throw new EmailExistsException();
+		
+		User user = new User(email, false, credit, tag);
+		users.add(user);
+		return user;
+		
 	}
 	
 	/**

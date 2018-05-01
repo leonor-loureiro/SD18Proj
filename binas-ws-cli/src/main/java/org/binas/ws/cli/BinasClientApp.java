@@ -47,8 +47,8 @@ public class BinasClientApp {
 //		 System.out.print(result);
 		 
 		 
-//		 client.testInit(20);
-//		 System.out.println(client.activateUser("username@domain").getEmail());
+		 client.testInit(20);
+		 System.out.println(client.activateUser("username@domain").getCredit());
 //		 
 //		 int credit = client.getCredit("username@domain");
 //		 System.out.println("username@domain credit = " + credit);

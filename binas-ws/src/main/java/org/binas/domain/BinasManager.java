@@ -18,10 +18,13 @@ import org.binas.domain.exception.NoBinaRentedException;
 import org.binas.domain.exception.NoCreditException;
 import org.binas.domain.exception.UserNotExistsException;
 import org.binas.station.ws.BadInit_Exception;
+import org.binas.station.ws.BalanceView;
 import org.binas.station.ws.CoordinatesView;
+import org.binas.station.ws.InvalidEmail_Exception;
 import org.binas.station.ws.NoBinaAvail_Exception;
 import org.binas.station.ws.NoSlotAvail_Exception;
 import org.binas.station.ws.StationView;
+import org.binas.station.ws.UserNotExists_Exception;
 import org.binas.station.ws.cli.StationClient;
 import org.binas.station.ws.cli.StationClientException;
 
@@ -47,8 +50,12 @@ public class BinasManager {
 
 	/* Station name org template */
 	private String stationWSName;
+	
+	/* Quorum */
+	private int Q = 3;
 
 	// Singleton -------------------------------------------------------------
+
 
 	private BinasManager() {
 	}
@@ -76,7 +83,10 @@ public class BinasManager {
 	public void setUserInitialPoints(int userInitialPoints) {
 		UserManager.getInstance().setUserInitialPoints(userInitialPoints);
 	}
-
+	
+	public int getUserInitialPoints() {
+		return UserManager.getInstance().getUserInitialPoints();
+	}
 
 	public void setUddiUrl(String uddiUrl) {
 		this.uddiURL = uddiUrl;
@@ -92,6 +102,14 @@ public class BinasManager {
 
 	public String getStationWSName() {
 		return this.stationWSName;
+	}
+	
+	public int getQ() {
+		return Q;
+	}
+
+	public void setQ(int q) {
+		Q = q;
 	}
 
 	/**
@@ -161,7 +179,58 @@ public class BinasManager {
      * @throws EmailExistsException
      */
 	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
-		return UserManager.getInstance().activateUser(email);
+		
+		/* Testes */
+//		try {
+//			StationClient client = new StationClient(uddiURL, "T08_Station1");
+//			client.setBalance(email,300,1);
+//			
+//			client = new StationClient(uddiURL, "T08_Station2");
+//			client.setBalance(email,50,2);
+//		} catch (Exception sce) {
+//			
+//		}
+		/* Testes Fim */
+		
+		try {
+			UserManager.getInstance().getUserByEmail(email);
+			throw new EmailExistsException();
+		}catch(UserNotExistsException unee) {	
+		}
+		
+		List<BalanceView> userInfo = new ArrayList<>();
+		try {
+			List<StationClient> stations = getAvailableStations();
+			for(StationClient client : stations) {
+				userInfo.add(client.getBalance(email));
+			}
+		}catch(UserNotExists_Exception iee) {
+		}
+		
+		int credit = getUserInitialPoints();
+		int tag = 0;
+		
+		if(!userInfo.isEmpty()) {
+			BalanceView userMax = Collections.max(userInfo, new BalanceViewComparator());
+			credit = userMax.getValue();
+			tag = userMax.getTag();
+		}
+		
+		
+		User user = UserManager.getInstance().activateUser(email,credit, tag);
+		
+		try {
+			List<StationClient> stations = getAvailableStations();
+			for(StationClient client : stations) {
+				client.setBalance(email, credit, tag);
+			}
+		}catch(InvalidEmail_Exception iee) {
+			throw new InvalidEmailException();
+		}
+		
+		if(!userInfo.isEmpty())
+			throw new EmailExistsException();
+		return user;
 	}
 
 	/**
@@ -342,6 +411,18 @@ public class BinasManager {
             double dist1 = Math.pow(c1.getX() - this.x, 2) + Math.pow(c1.getY() - this.y, 2);
             double dist2 = Math.pow(c2.getX() - this.x, 2) + Math.pow(c2.getY() - this.y, 2);
             return (int) (dist1 - dist2);
+        }
+    }
+	
+	
+	/**
+	 * Comparator class for comparing balance views based on its tag
+	 *
+	 */
+	private class BalanceViewComparator implements Comparator<BalanceView> {
+        @Override
+        public int compare(BalanceView b1, BalanceView b2) {
+            return (b1.getTag() - b2.getTag());
         }
     }
 	
