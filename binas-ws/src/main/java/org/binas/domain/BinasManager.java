@@ -178,7 +178,7 @@ public class BinasManager {
 	 * @throws UserNotExistsException
 	 * @throws InvalidEmailException
 	 */
-	private BalanceView maxBalance(String email) throws UserNotExistsException, InvalidEmailException{
+	private User maxBalance(String email) throws UserNotExistsException, InvalidEmailException{
 		System.out.println("maxBalance");
 		List<BalanceView> userInfo = new ArrayList<>();
 		try {
@@ -192,10 +192,15 @@ public class BinasManager {
 		if(!userInfo.isEmpty()) {
 			// Searches for most recent balance			
 			BalanceView balance = Collections.max(userInfo, new BalanceViewComparator());
+			
 			int credit = balance.getValue();
 			int tag = balance.getTag();
+			
+			//Update user remote replicas
 			writeback(email, credit, tag);
-			return balance;
+			
+			// Update user cache
+			return UserManager.getInstance().activateUser(email,credit, tag);
 			
 		}
 		
@@ -247,42 +252,27 @@ public class BinasManager {
 		try {
 			UserManager.getInstance().getUserByEmail(email);
 			throw new EmailExistsException();
-		}catch(UserNotExistsException unee) {	
+		}catch(UserNotExistsException unee) {
+			//User not in cache
 		}
-		
-		List<BalanceView> userInfo = new ArrayList<>();
-		try {
-			List<StationClient> stations = getAvailableStations();
-			for(StationClient client : stations) {
-				userInfo.add(client.getBalance(email));
-			}
-		}catch(UserNotExists_Exception iee) {
-		}
-		
-		int credit = getUserInitialPoints();
-		int tag = 0;
-		
-		if(!userInfo.isEmpty()) {
-			BalanceView userMax = Collections.max(userInfo, new BalanceViewComparator());
-			credit = userMax.getValue();
-			tag = userMax.getTag();
-		}
-		
-		
-		User user = UserManager.getInstance().activateUser(email,credit, tag);
 		
 		try {
-			List<StationClient> stations = getAvailableStations();
-			for(StationClient client : stations) {
-				client.setBalance(email, credit, tag);
-			}
-		}catch(InvalidEmail_Exception iee) {
-			throw new InvalidEmailException();
-		}
-		
-		if(!userInfo.isEmpty())
+			maxBalance(email);
+			
+			//User exists in remote replica manager
 			throw new EmailExistsException();
-		return user;
+			
+		}catch(UserNotExistsException unee) {
+			int credit = getUserInitialPoints();
+			int tag = 0;
+			
+			//Updates remote replicas
+			writeback(email, credit, tag);
+			
+			//Updates cache
+			return UserManager.getInstance().activateUser(email,credit, tag);
+
+		}
 	}
 
 	/**
@@ -307,7 +297,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {	
 		}
 		try {
-			return maxBalance(email).getValue();
+			return maxBalance(email).getCredit();
 		}catch(InvalidEmailException iee) {
 		}
 	

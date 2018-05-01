@@ -62,7 +62,7 @@ public class UserManager {
      * @throws InvalidEmailException
      * @throws EmailExistsException
      */
-	public synchronized User activateUser(String email, int credit, int tag) throws InvalidEmailException, EmailExistsException {
+	public synchronized User activateUser(String email, int credit, int tag) throws InvalidEmailException {
 		if (email == null || !email.matches("^([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+@([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+$")) {
 			throw new InvalidEmailException();
 		}
