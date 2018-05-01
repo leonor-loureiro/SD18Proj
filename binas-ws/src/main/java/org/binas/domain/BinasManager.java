@@ -171,6 +171,58 @@ public class BinasManager {
 		return stations.subList(0, n);
 	}
 
+	/**
+	 * Asks all stations for the balance value of user with given email
+	 * @param email
+	 * @return most recent credit and tag
+	 * @throws UserNotExistsException
+	 * @throws InvalidEmailException
+	 */
+	private BalanceView maxBalance(String email) throws UserNotExistsException, InvalidEmailException{
+		System.out.println("maxBalance");
+		List<BalanceView> userInfo = new ArrayList<>();
+		try {
+			List<StationClient> stations = getAvailableStations();
+			for(StationClient client : stations) {
+				userInfo.add(client.getBalance(email));
+			}
+		}catch(UserNotExists_Exception iee) {
+		}
+		
+		if(!userInfo.isEmpty()) {
+			// Searches for most recent balance			
+			BalanceView balance = Collections.max(userInfo, new BalanceViewComparator());
+			int credit = balance.getValue();
+			int tag = balance.getTag();
+			writeback(email, credit, tag);
+			return balance;
+			
+		}
+		
+		throw new UserNotExistsException();
+		
+		
+	}
+	
+	/**
+	 * Updates user replicas
+	 * @param email
+	 * @param credit
+	 * @param tag
+	 * @throws InvalidEmailException
+	 */
+	private void writeback(String email, int credit, int tag) throws InvalidEmailException {
+		try {
+			List<StationClient> stations = getAvailableStations();
+			for(StationClient client : stations) {
+				client.setBalance(email, credit, tag);
+			}
+		}catch(InvalidEmail_Exception iee) {
+			throw new InvalidEmailException();
+		}
+	}
+	
+	
     /**
      * Activates user
      * @param email used to register the new user
@@ -250,7 +302,16 @@ public class BinasManager {
 	 * @throws UserNotExistsException
 	 */
 	public synchronized int getCredit(String email) throws UserNotExistsException {
-		return getUserByEmail(email).getCredit();
+		try {
+			return getUserByEmail(email).getCredit();
+		}catch(UserNotExistsException unee) {	
+		}
+		try {
+			return maxBalance(email).getValue();
+		}catch(InvalidEmailException iee) {
+		}
+	
+		return 0;
 	}
 
 	/**

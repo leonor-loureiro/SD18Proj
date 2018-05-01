@@ -47,11 +47,11 @@ public class BinasClientApp {
 //		 System.out.print(result);
 		 
 		 
-		 client.testInit(20);
-		 System.out.println(client.activateUser("username@domain").getCredit());
+//		 client.testInit(20);
+//		 System.out.println(client.activateUser("username@domain").getCredit());
 //		 
-//		 int credit = client.getCredit("username@domain");
-//		 System.out.println("username@domain credit = " + credit);
+		 int credit = client.getCredit("username@domain");
+		 System.out.println("username@domain credit = " + credit);
 		 
 //		 client.rentBina("T08_Station1","username@domain");
 //		 
