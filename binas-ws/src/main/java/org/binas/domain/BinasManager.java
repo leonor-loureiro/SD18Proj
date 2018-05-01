@@ -354,9 +354,15 @@ public class BinasManager {
 		try {
 			StationClient client = new StationClient(uddiURL, stationId);
 			client.getBina();
-			user.setCredit(user.getCredit() - 1);
+			user.removeOneCredit();
 			user.setHasBina(true);
 
+			//Update remote replicas of user
+			try {
+				writeback(email, user.getCredit(), user.getTag());
+			}catch(InvalidEmailException iee) {
+			}
+			
 		} catch (NoBinaAvail_Exception nbae) {
 			throw new NoBinaAvailException();
 
