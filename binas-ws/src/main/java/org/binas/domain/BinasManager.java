@@ -317,7 +317,20 @@ public class BinasManager {
 	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
 			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
 
-		User user = getUserByEmail(email);
+		User user = null;
+		try{
+			//checks if user is in cache
+			user = getUserByEmail(email);
+			
+		}catch(UserNotExistsException unee) {
+			try{
+				//checks if exists remote replica of user
+				user = maxBalance(email);
+				
+			}catch(InvalidEmailException iee) {
+			}
+		}
+		
 		if (user.getHasBina()) {
 			throw new AlreadyHasBinaException();
 		}
@@ -373,7 +386,20 @@ public class BinasManager {
 	public synchronized void returnBina(String stationId, String email)
 			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
 
-		User user = getUserByEmail(email);
+		User user = null;
+		try{
+			//checks if user is in cache
+			user = getUserByEmail(email);
+			
+		}catch(UserNotExistsException unee) {
+			try{
+				//checks if exists remote replica of user
+				user = maxBalance(email);
+				
+			}catch(InvalidEmailException iee) {
+			}
+		}
+
 		if (!user.getHasBina()) {
 			throw new NoBinaRentedException();
 		}
@@ -386,6 +412,12 @@ public class BinasManager {
 			int bonus = client.returnBina();
 			user.setHasBina(false);
 			user.receiveBonus(bonus);
+			
+			//Update remote replicas of user
+			try {
+				writeback(email, user.getCredit(), user.getTag());
+			}catch(InvalidEmailException iee) {
+			}
 
 		} catch (StationClientException e) {
 			throw new InvalidStationException();
