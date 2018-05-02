@@ -20,7 +20,6 @@ import org.binas.domain.exception.UserNotExistsException;
 import org.binas.station.ws.*;
 import org.binas.station.ws.cli.StationClient;
 import org.binas.station.ws.cli.StationClientException;
-
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
@@ -171,31 +170,6 @@ public class BinasManager {
 
 
 
-	class GetUpdatedUserCallBackHandler implements AsyncHandler<GetBalanceResponse>{
-		private ArrayList<GetBalanceResponse> resultList = new ArrayList<>(Q);
-
-		@Override
-		public synchronized void handleResponse(Response<GetBalanceResponse> response){
-			try{
-				resultList.add(response.get());
-			} catch (InterruptedException e) {
-				System.out.println("Caught interrupted exception.");
-				System.out.print("Cause: ");
-				System.out.println(e.getCause());
-			} catch (ExecutionException e) {
-				System.out.println("Caught interrupted exception.");
-				System.out.print("Cause: ");
-				System.out.println(e.getCause());
-			}
-		}
-
-		public synchronized List<GetBalanceResponse> getResponses(){
-			return resultList;
-		}
-	}
-
-
-
 
 	/**
 	 * Asks all stations for the balance value of user with given email
@@ -218,17 +192,12 @@ public class BinasManager {
 		}
 
 		// wait for all Q responses
-		int i;
-		boolean QReached = false;
-		while (!QReached) {
+		int i = 0;
+		while ( i < getQ()) {
 			i = 0;
-			for ( Future<?> fu : futures){
-				if( fu.isDone()){
-					if(++i == getQ()){
-						QReached = true;
-					}
-				}
-			}
+			for ( Future<?> fu : futures)
+				if( fu.isDone())
+					i++;
 		}
 
 		// convert GetBalanceResponse to Balance view list
@@ -257,12 +226,9 @@ public class BinasManager {
 			
 			// Update user cache
 			return UserManager.getInstance().activateUser(email,credit, tag);
-			
 		}
 		
 		throw new UserNotExistsException();
-		
-		
 	}
 	
 	/**
@@ -273,13 +239,24 @@ public class BinasManager {
 	 * @throws InvalidEmailException
 	 */
 	private void writeback(String email, int credit, int tag) throws InvalidEmailException {
-		try {
-			List<StationClient> stations = getAvailableStations();
-			for(StationClient client : stations) {
-				client.setBalance(email, credit, tag);
+		WriteBackHandler handler = new WriteBackHandler();
+		List<StationClient> stations = getAvailableStations();
+		ArrayList<Future<?>> futures = new ArrayList<>();
+		int i;
+
+		for(StationClient client : stations) {
+			futures.add(client.setBalanceAsync(email, credit, tag, handler));
+		}
+
+		while (true) {
+			i=0;
+			for (Future<?> f : futures) {
+				if (f.isDone()) {
+					if ( ++i == getQ() ) {
+						return;
+					}
+				}
 			}
-		}catch(InvalidEmail_Exception iee) {
-			throw new InvalidEmailException();
 		}
 	}
 	
@@ -355,9 +332,8 @@ public class BinasManager {
 		try {
 			return getUpdatedUser(email).getCredit();
 		}catch(InvalidEmailException iee) {
+			throw new UserNotExistsException();
 		}
-	
-		return 0;
 	}
 
 	/**
@@ -570,6 +546,50 @@ public class BinasManager {
             return (b1.getTag() - b2.getTag());
         }
     }
-	
-	
+
+	/**
+	 * You may think you know what the following code does.
+	 * But you dont. Trust me.
+	 * Fiddle with it, and youll spend many a sleepless
+	 * night cursing the moment you thought youd be clever
+	 * enough to "optimize" the code below.
+	 * Now close this file and go play with something else.
+	 */
+    class WriteBackHandler implements AsyncHandler<SetBalanceResponse> {
+		@Override
+		public void handleResponse(Response<SetBalanceResponse> res) {
+			//   \( OwO )7  i'm useful
+		}
+	}
+
+
+	/**
+	 * Class used to handle callback funtions in getUpdatedUser method
+	 */
+	class GetUpdatedUserCallBackHandler implements AsyncHandler<GetBalanceResponse>{
+		private ArrayList<GetBalanceResponse> resultList = new ArrayList<>(Q);
+
+		/**
+		 *
+		 * @param response the values of all callback functions so far.
+		 */
+		@Override
+		public synchronized void handleResponse(Response<GetBalanceResponse> response){
+			try{
+				resultList.add(response.get());
+			} catch (InterruptedException e) {
+				System.out.println("Caught interrupted exception.");
+				System.out.print("Cause: ");
+				System.out.println(e.getCause());
+			} catch (ExecutionException e) {
+				System.out.println("Caught execution exception.");
+				System.out.print("Cause: ");
+				System.out.println(e.getCause());
+			}
+		}
+		public synchronized List<GetBalanceResponse> getResponses(){
+			return resultList;
+		}
+	}
+
 }
