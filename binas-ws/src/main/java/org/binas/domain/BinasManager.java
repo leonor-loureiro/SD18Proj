@@ -47,7 +47,7 @@ public class BinasManager {
 	private String stationWSName;
 	
 	/* Quorum */
-	private int Q = 3;
+	private int Q = 2;
 
 	// Singleton -------------------------------------------------------------
 

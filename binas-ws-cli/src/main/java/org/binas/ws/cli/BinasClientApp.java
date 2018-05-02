@@ -1,9 +1,8 @@
 package org.binas.ws.cli;
 
-import java.util.List;
-
-import org.binas.ws.CoordinatesView;
-import org.binas.ws.StationView;
+import org.binas.ws.EmailExists_Exception;
+import org.binas.ws.UserNotExists_Exception;
+import org.binas.ws.UserView;
 
 public class BinasClientApp {
 
@@ -50,8 +49,8 @@ public class BinasClientApp {
 //		 client.testInit(20);
 //		 System.out.println(client.activateUser("username@domain").getCredit());
 //		 
-		 int credit = client.getCredit("username@domain");
-		 System.out.println("username@domain credit = " + credit);
+//		 int credit = client.getCredit("username@domain");
+//		 System.out.println("username@domain credit = " + credit);
 		 
 //		 client.rentBina("T08_Station1","username@domain");
 //		 
@@ -69,6 +68,43 @@ public class BinasClientApp {
 //		 
 //		 for (StationView s : stations)
 //			 System.out.println(s.getFreeDocks());
+		 
+		 String email = "username@domain";
+		 String stationID = "T08_Station1";
+		 int bonus = 5;
+		 
+		 client.testInitStation(stationID, 20, 40, 10, bonus);
+		 System.out.println(stationID + " initiallized with bonus " + bonus);
+		 
+		 try {
+			 int credit = client.getCredit(email);
+			 System.out.println("username@domain credit = " + credit);
+			 
+		 }catch(UserNotExists_Exception unee) {
+			 System.out.println("User does not exists.");
+		 }
+		 
+		 try {
+			 client.testInit(20);
+			 
+			 UserView user = client.activateUser(email);
+			 System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
+			 
+		 }catch(EmailExists_Exception eee) {
+			 System.out.println("Already exists user with email: " + email);
+		 }
+		 
+		 client.rentBina(stationID, email);
+		 System.out.println("Bina rented from " + stationID);
+		 
+		 client.returnBina(stationID, email);
+		 System.out.println("Bina returned to " + stationID);
+		 
+		 System.out.println("User " + email + " current credit is " + client.getCredit(email));
+		 
+		 
+		 
+		 
 	 }
 }
 
