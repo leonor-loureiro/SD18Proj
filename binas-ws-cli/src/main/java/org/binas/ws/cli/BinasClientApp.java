@@ -38,37 +38,15 @@ public class BinasClientApp {
             client = new BinasClient(uddiURL, wsName);
         }
 
-        // the following remote invocations are just basic examples
-        // the actual tests are made using JUnit
 
-//		 System.out.println("Invoke ping()...");
-//		 String result = client.testPing("client");
-//		 System.out.print(result);
-		 
-		 
-//		 client.testInit(20);
-//		 System.out.println(client.activateUser("username@domain").getCredit());
-//		 
-//		 int credit = client.getCredit("username@domain");
-//		 System.out.println("username@domain credit = " + credit);
-		 
-//		 client.rentBina("T08_Station1","username@domain");
-//		 
-//		 System.out.println(client.getInfoStation("T08_Station1").getFreeDocks());
-//		 
-//		 client.returnBina("T08_Station1","username@domain");
-//		 System.out.println("Tried to return bina");
-//		 
-//		 CoordinatesView coord = new CoordinatesView();
-//		 coord.setX(1);
-//		 coord.setY(1);
-//		 
-//		 List<StationView> stations = client.listStations(new Integer(1), coord);
-//		 System.out.println("Were stations found?: " + !stations.isEmpty());
-//		 
-//		 for (StationView s : stations)
-//			 System.out.println(s.getFreeDocks());
-		 
+		 /***********************************
+		    Fault Tolerance Demonstration
+		    
+		     F1 - Normal function
+		     F2 - Fault tolerance
+		  **********************************/
+        
+        
 		 String email = "username@domain";
 		 String stationID = "T08_Station1";
 		 int bonus = 5;
@@ -76,14 +54,13 @@ public class BinasClientApp {
 		 client.testInitStation(stationID, 20, 40, 10, bonus);
 		 System.out.println(stationID + " initiallized with bonus " + bonus);
 		 
-		 try {
-			 int credit = client.getCredit(email);
-			 System.out.println("username@domain credit = " + credit);
-			 
-		 }catch(UserNotExists_Exception unee) {
-			 System.out.println("User does not exists.");
-		 }
 		 
+		 /**
+		  * F1 - Creates user successfully
+		  * 
+		  * F2 - First execution: Creates user successfully
+		  *    - Second execution: User already exists (in remote replica manager)
+		  */
 		 try {
 			 client.testInit(20);
 			 
@@ -91,14 +68,16 @@ public class BinasClientApp {
 			 System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
 			 
 		 }catch(EmailExists_Exception eee) {
-			 System.out.println("Already exists user with email: " + email);
+			 System.out.println("Already exists user " + email + " with credit: " + client.getCredit(email));
 		 }
+		 
 		 
 		 client.rentBina(stationID, email);
 		 System.out.println("Bina rented from " + stationID);
 		 
 		 client.returnBina(stationID, email);
 		 System.out.println("Bina returned to " + stationID);
+		 
 		 
 		 System.out.println("User " + email + " current credit is " + client.getCredit(email));
 		 

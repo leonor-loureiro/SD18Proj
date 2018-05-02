@@ -18,7 +18,7 @@ public class PersistencyIT extends BaseIT {
     private String stationId1 = "T08_Station1";
 
     /**
-     * 
+     *
      */
     @Test
     public void sucess_user_persistent() throws EmailExists_Exception, InvalidEmail_Exception, BadInit_Exception, UserNotExists_Exception {
