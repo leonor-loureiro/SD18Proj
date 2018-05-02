@@ -3,9 +3,24 @@ package org.binas.domain;
 /** Class to store user info. */
 public class User {
 
+	/**
+	 * User's unique identifier
+	 */
 	private String email;
+
+	/**
+	 * true if user is using a Bina
+	 */
 	private boolean hasBina;
+
+	/**
+	 * user currency to rent binas
+	 */
 	private int credit;
+
+	/**
+	 * value which represents this user's credit version to check if it's updated with servers or not
+	 */
 	private int tag;
 
 	public User(String email, boolean hasBina, int credit, int tag) {

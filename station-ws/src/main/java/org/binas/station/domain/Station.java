@@ -59,7 +59,8 @@ public class Station {
  		this.maxCapacity = capacity;
  		this.bonus = returnPrize;
  	}
- 	
+
+ 	/** Resets station to default values */
 	public synchronized void reset() {
  		freeDocks.set(0);
  		maxCapacity = DEFAULT_MAX_CAPACITY;
@@ -69,7 +70,8 @@ public class Station {
 		totalGets.set(0);
 		totalReturns.set(0);
 	}
- 	
+
+	/** Setter for id */
  	public void setId(String id) {
  		this.id = id;
  	}

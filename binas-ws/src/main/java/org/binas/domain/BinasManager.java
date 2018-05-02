@@ -47,7 +47,7 @@ public class BinasManager {
 	private String stationWSName;
 	
 	/* Quorum */
-	private int Q = 2;
+	private int Q;
 
 	// Singleton -------------------------------------------------------------
 
@@ -182,10 +182,10 @@ public class BinasManager {
 
 
 	/**
-	 * 
+	 * finds credit of given user
 	 * @param email user's email
-	 * @return credit of given user's email
-	 * @throws UserNotExistsException
+	 * @return credit of given user
+	 * @throws UserNotExistsException when the user does not exist locally nor in replicas
 	 */
 	public synchronized int getCredit(String email) throws UserNotExistsException {
 		try {
@@ -200,14 +200,14 @@ public class BinasManager {
 	}
 
 	/**
-	 * Rents a bina from a given stations
-	 * @param stationId
-	 * @param email
-	 * @throws UserNotExistsException
-	 * @throws InvalidStationException
-	 * @throws NoBinaAvailException
-	 * @throws AlreadyHasBinaException
-	 * @throws NoCreditException
+	 * Rents a bina from a given stations if user has enough credit for the rent
+	 * @param stationId station's identifier
+	 * @param email user's identifier
+	 * @throws UserNotExistsException no user was found with given email
+	 * @throws InvalidStationException the station doesn't exist or wasn't available
+	 * @throws NoBinaAvailException the station doesn't have a bina available to be rented
+	 * @throws AlreadyHasBinaException the user already has a bina
+	 * @throws NoCreditException the user doesnt not have enough credit to rent
 	 */
 	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
 			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
@@ -259,9 +259,9 @@ public class BinasManager {
 
 	/**
 	 * Returns information for given station id in view form
-	 * @param stationId
+	 * @param stationId station's identifier
 	 * @return StationView with station's information
-	 * @throws InvalidStationException
+	 * @throws InvalidStationException station does not exist or isn't available
 	 */
 	public StationView getInfoStation(String stationId) throws InvalidStationException {
 		
@@ -277,13 +277,13 @@ public class BinasManager {
 	}
 
 	/**
-	 * Returns given bina to the station if associated to proper email
-	 * @param stationId
+	 * Returns given bina to the station by a certain user
+	 * @param stationId station's identifier
 	 * @param email user's email
-	 * @throws InvalidStationException
-	 * @throws UserNotExistsException
-	 * @throws NoSlotAvail_Exception
-	 * @throws NoBinaRentedException
+	 * @throws InvalidStationException when station does not exist or isn't available
+	 * @throws UserNotExistsException when there was no user found with given email
+	 * @throws NoSlotAvail_Exception when there are no slots available at station for bina to be returned
+	 * @throws NoBinaRentedException when user does not have any bina rented
 	 */
 	public synchronized void returnBina(String stationId, String email)
 			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
@@ -364,10 +364,10 @@ public class BinasManager {
     /**
      * Initializes station with given parameters
      * @param stationId target station
-     * @param x
-     * @param y
-     * @param capacity
-     * @param returnPrize
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param capacity station's capacity
+     * @param returnPrize station's prize for returning a bina
      * @throws StationClientException
      * @throws Exception
      */
@@ -387,7 +387,7 @@ public class BinasManager {
 	
 	/**
 	 * Checks if station ID matches Binas' Station ID format
-	 * @param stationId
+	 * @param stationId station's identifier
 	 * @return true if matches, false otherwise
 	 */
 	private boolean isValidStationId(String stationId) {
@@ -398,7 +398,7 @@ public class BinasManager {
 
     /**
      * Gets user from email
-     * @param email
+     * @param email user's identifier
      * @return Found user
      * @throws UserNotExistsException if not found
      */
@@ -430,13 +430,13 @@ public class BinasManager {
 
 	/**
 	 * Asks all stations for the balance value of user with given email
-	 * @param email
+	 * @param email user's identifier
 	 * @param read
 	 * 		  true: if called by read operation (w/ writeToReplicas phase)
 	 * 		  false: if called by write operation (n/ writeToReplicas phase)
 	 * @return user with most recent credit and tag
-	 * @throws UserNotExistsException
-	 * @throws InvalidEmailException
+	 * @throws UserNotExistsException no user was found with given email
+	 * @throws InvalidEmailException the email given isn't valid
 	 */
 	private User readFromReplicas(String email, boolean read) throws UserNotExistsException, InvalidEmailException{
 		List<BalanceView> userInfo;
@@ -499,11 +499,11 @@ public class BinasManager {
 	}
 	
 	/**
-	 * Updates user's info in replicas
-	 * @param email
-	 * @param credit
-	 * @param tag
-	 * @throws InvalidEmailException
+	 * Updates local users' info with information found in replicas
+	 * @param email user's identifier
+	 * @param credit user's balance
+	 * @param tag version of user's edit
+	 * @throws InvalidEmailException the email doesn't not match a valid format
 	 */
 	private void writeToReplicas(String email, int credit, int tag) throws InvalidEmailException {
 		WriteToReplicasHandler handler = new WriteToReplicasHandler();
@@ -543,7 +543,7 @@ public class BinasManager {
 ////////////////////////// COMPARATORS ////////////////////////////////
 	/**
 	 * Sorts Stations views by distance to given coordinate point
-	 * @param stations
+	 * @param stations list of stations
 	 * @param coord coordinate point
 	 * @return sorted List
 	 */
@@ -633,6 +633,10 @@ public class BinasManager {
 				System.out.println(e.getCause());
 			}
 		}
+
+		/**
+		 * @return the values of all callback functions that executed so far within this handler
+		 */
 		public synchronized List<GetBalanceResponse> getResponses(){
 			return resultList;
 		}
