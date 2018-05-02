@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.binas.domain.exception.AlreadyHasBinaException;
@@ -17,20 +17,16 @@ import org.binas.domain.exception.NoBinaAvailException;
 import org.binas.domain.exception.NoBinaRentedException;
 import org.binas.domain.exception.NoCreditException;
 import org.binas.domain.exception.UserNotExistsException;
-import org.binas.station.ws.BadInit_Exception;
-import org.binas.station.ws.BalanceView;
-import org.binas.station.ws.CoordinatesView;
-import org.binas.station.ws.InvalidEmail_Exception;
-import org.binas.station.ws.NoBinaAvail_Exception;
-import org.binas.station.ws.NoSlotAvail_Exception;
-import org.binas.station.ws.StationView;
-import org.binas.station.ws.UserNotExists_Exception;
+import org.binas.station.ws.*;
 import org.binas.station.ws.cli.StationClient;
 import org.binas.station.ws.cli.StationClientException;
 
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
+
+import javax.xml.ws.AsyncHandler;
+import javax.xml.ws.Response;
 
 /**
  * Domain Root of Binas servers
@@ -171,24 +167,73 @@ public class BinasManager {
 		return stations.subList(0, n);
 	}
 
+
+
+
+
+	class GetUpdatedUserCallBackHandler implements AsyncHandler<GetBalanceResponse>{
+		private ArrayList<GetBalanceResponse> resultList = new ArrayList<>(Q);
+
+		@Override
+		public synchronized void handleResponse(Response<GetBalanceResponse> response){
+			try{
+				resultList.add(response.get());
+			} catch (InterruptedException e) {
+				System.out.println("Caught interrupted exception.");
+				System.out.print("Cause: ");
+				System.out.println(e.getCause());
+			} catch (ExecutionException e) {
+				System.out.println("Caught interrupted exception.");
+				System.out.print("Cause: ");
+				System.out.println(e.getCause());
+			}
+		}
+
+		public synchronized List<GetBalanceResponse> getResponses(){
+			return resultList;
+		}
+	}
+
+
+
+
 	/**
 	 * Asks all stations for the balance value of user with given email
 	 * @param email
-	 * @return most recent credit and tag
+	 * @return user with most recent credit and tag
 	 * @throws UserNotExistsException
 	 * @throws InvalidEmailException
 	 */
-	private User maxBalance(String email) throws UserNotExistsException, InvalidEmailException{
-		System.out.println("maxBalance");
+	private User getUpdatedUser(String email) throws UserNotExistsException, InvalidEmailException{
+		System.out.println("getUpdatedUser");
 		List<BalanceView> userInfo = new ArrayList<>();
-		try {
-			List<StationClient> stations = getAvailableStations();
-			for(StationClient client : stations) {
-				userInfo.add(client.getBalance(email));
-			}
-		}catch(UserNotExists_Exception iee) {
+		List<Future<?> > futures = new ArrayList<>();
+
+		GetUpdatedUserCallBackHandler handler = new GetUpdatedUserCallBackHandler();
+		List<StationClient> stations = getAvailableStations();
+
+		// adds a callback for each
+		for(StationClient client : stations) {
+			futures.add(client.getBalanceAsync(email, handler));
 		}
-		
+
+		// wait for all Q responses
+		int i;
+		boolean QReached = false;
+		while (!QReached) {
+			i = 0;
+			for ( Future<?> fu : futures){
+				if( fu.isDone()){
+					if(++i == getQ()){
+						QReached = true;
+					}
+				}
+			}
+		}
+
+		// convert GetBalanceResponse to Balance view list
+		userInfo = handler.getResponses().stream().map(GetBalanceResponse::getBalance).collect(Collectors.toList());
+
 		if(!userInfo.isEmpty()) {
 			// Searches for most recent balance			
 			BalanceView balance = Collections.max(userInfo, new BalanceViewComparator());
@@ -268,7 +313,7 @@ public class BinasManager {
 		}
 		
 		try {
-			maxBalance(email);
+			getUpdatedUser(email);
 			
 			//User exists in remote replica manager
 			throw new EmailExistsException();
@@ -308,7 +353,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {	
 		}
 		try {
-			return maxBalance(email).getCredit();
+			return getUpdatedUser(email).getCredit();
 		}catch(InvalidEmailException iee) {
 		}
 	
@@ -336,7 +381,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = maxBalance(email);
+				user = getUpdatedUser(email);
 				
 			}catch(InvalidEmailException iee) {
 			}
@@ -411,7 +456,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = maxBalance(email);
+				user = getUpdatedUser(email);
 				
 			}catch(InvalidEmailException iee) {
 			}
