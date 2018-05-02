@@ -180,7 +180,7 @@ public class BinasManager {
 	 */
 	private User getUpdatedUser(String email) throws UserNotExistsException, InvalidEmailException{
 		System.out.println("getUpdatedUser");
-		List<BalanceView> userInfo = new ArrayList<>();
+		List<BalanceView> userInfo;
 		List<Future<?> > futures = new ArrayList<>();
 
 		GetUpdatedUserCallBackHandler handler = new GetUpdatedUserCallBackHandler();
