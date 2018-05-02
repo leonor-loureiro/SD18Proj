@@ -6,28 +6,52 @@ public class Coordinates {
 	private int x;
 	private int y;
 
+	/**
+	 * Coordinate constructor
+	 * @param x x value
+	 * @param y y value
+	 */
 	public Coordinates(int x, int y) {
-		super();
 		this.x = x;
 		this.y = y;
 	}
 
+	/**
+	 * X getter
+	 * @return
+	 */
 	public int getX() {
 		return x;
 	}
 
+	/**
+	 * X setter
+	 * @param x
+	 */
 	public void setX(int x) {
 		this.x = x;
 	}
 
+	/**
+	 * Y getter
+	 * @return
+	 */
 	public int getY() {
 		return y;
 	}
 
+	/**
+	 * Y setter
+	 * @param y
+	 */
 	public void setY(int y) {
 		this.y = y;
 	}
 
+	/**
+	 * Hash function
+	 * @return hash of coordinate
+	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -37,6 +61,11 @@ public class Coordinates {
 		return result;
 	}
 
+	/**
+	 * Equals Override
+	 * @param obj object to compare
+	 * @return equal or not
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -53,6 +82,10 @@ public class Coordinates {
 		return true;
 	}
 
+	/**
+	 * toString Override
+	 * @return object in  string format
+	 */
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
