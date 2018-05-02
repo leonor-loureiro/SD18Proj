@@ -431,14 +431,12 @@ public class BinasManager {
 	 * @throws InvalidEmailException
 	 */
 	private User getUpdatedUser(String email) throws UserNotExistsException, InvalidEmailException{
-
 		List<BalanceView> userInfo;
 		List<Future<?> > futures = new ArrayList<>();
-
-		GetUpdatedUserCallBackHandler handler = new GetUpdatedUserCallBackHandler();
+		GetUpdatedUserCallBackHandler handler = new GetUpdatedUserCallBackHandler(); //callback handler
 		List<StationClient> stations = getAvailableStations();
 
-		// adds a callback for each
+		// adds a callback for each replica
 		for(StationClient client : stations) {
 			futures.add(client.getBalanceAsync(email, handler));
 		}
@@ -450,6 +448,11 @@ public class BinasManager {
 			for ( Future<?> fu : futures)
 				if( fu.isDone())
 					i++;
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				// sleep interrupted is not an error
+			}
 		}
 
 		// convert GetBalanceResponse to Balance view list
@@ -479,7 +482,8 @@ public class BinasManager {
 			// Update user cache
 			return UserManager.getInstance().activateUser(email,credit, tag);
 		}
-		
+
+		// if handler's response is empty, means all responses had userNotExistsException
 		throw new UserNotExistsException();
 	}
 	
