@@ -105,8 +105,8 @@ public class BinasManager {
 		return Q;
 	}
 
-	public void setQ(int q) {
-		Q = q;
+	public void setQ(int nStations) {
+		Q = (int) Math.floor(nStations / 2) + 1; // such math wow
 	}
 
 //////////////////// BINAS OPERATIONS //////////////////////////
@@ -485,7 +485,7 @@ public class BinasManager {
 		WriteBackHandler handler = new WriteBackHandler();
 		List<StationClient> stations = getAvailableStations();
 		ArrayList<Future<?>> futures = new ArrayList<>();
-		int i;
+		int i, e;
 
 		for(StationClient client : stations) {
 			futures.add(client.setBalanceAsync(email, credit, tag, handler));
@@ -493,9 +493,22 @@ public class BinasManager {
 
 		while (true) {
 			i=0;
+			e=0;
 			for (Future<?> f : futures) {
 				if (f.isDone()) {
-					if ( ++i == getQ() ) {
+					// check for errors
+					try {
+						f.get();
+                        i++;
+                    } catch (InterruptedException | ExecutionException e1) {
+                        e++;
+                    }
+					// check error quorum
+					if (e == getQ()) {
+					    throw new InvalidEmailException();
+                    }
+					// check response quorum
+					if ( i == getQ() ) {
 						return;
 					}
 				}
