@@ -254,7 +254,17 @@
                 <xs:sequence />
             </xs:complexType>
             <xs:element name="test_initResponse" type="tns:test_initResponse" />
+			
+			<xs:complexType name="test_clear_cache">
+                <xs:sequence />
+            </xs:complexType>
+            <xs:element name="test_clear_cache" type="tns:test_clear_cache" />
 
+            <xs:complexType name="test_clear_cacheResponse">
+                <xs:sequence />
+            </xs:complexType>
+            <xs:element name="test_clear_cacheResponse" type="tns:test_clear_cacheResponse" />
+            
             <xs:complexType name="BadInit">
                 <xs:sequence>
                     <xs:element name="message" type="xs:string" minOccurs="0" />
@@ -379,6 +389,13 @@
     <message name="BadInit">
         <part name="fault" element="tns:BadInit"/>
     </message>
+    
+    <message name="test_clear_cache">
+        <part name="parameters" element="tns:test_clear_cache"/>
+    </message>
+    <message name="test_clear_cacheResponse">
+        <part name="parameters" element="tns:test_clear_cacheResponse"/>
+    </message>
 
 
     <!-- Port Type (Interface) -->
@@ -473,6 +490,11 @@
             <input wsam:Action="http://ws.binas.org/Binas/test_initRequest" message="tns:test_init"/>
             <output wsam:Action="http://ws.binas.org/Binas/test_initResponse" message="tns:test_initResponse"/>
             <fault message="tns:BadInit" name="BadInit" wsam:Action="http://ws.binas.org/Binas/test_init/Fault/BadInit"/>
+        </operation>
+        
+        <operation name="test_clear_cache">
+            <input wsam:Action="http://ws.binas.org/Binas/test_clearRequest" message="tns:test_clear_cache"/>
+            <output wsam:Action="http://ws.binas.org/Binas/test_clearResponse" message="tns:test_clear_cacheResponse"/>
         </operation>
 
     </portType>
@@ -594,6 +616,16 @@
         </operation>
 
         <operation name="test_clear">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+        
+        <operation name="test_clear_cache">
             <soap:operation soapAction=""/>
             <input>
                 <soap:body use="literal"/>

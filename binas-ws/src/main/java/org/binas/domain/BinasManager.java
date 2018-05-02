@@ -347,6 +347,15 @@ public class BinasManager {
 		
 	}
 	
+	/**
+	 * clears all user information
+	 */
+	public synchronized void clearCache() {
+		UserManager.getInstance().clear();
+	}
+		
+	
+	
 	
     /**
      * Initializes station with given parameters
@@ -422,7 +431,7 @@ public class BinasManager {
 	 * @throws InvalidEmailException
 	 */
 	private User getUpdatedUser(String email) throws UserNotExistsException, InvalidEmailException{
-		System.out.println("getUpdatedUser");
+
 		List<BalanceView> userInfo;
 		List<Future<?> > futures = new ArrayList<>();
 

@@ -169,4 +169,10 @@ public class BinasClient implements BinasPortType {
 		port.testInit(userInitialPoints);
 	}
 
+	@Override
+	public void testClearCache() {
+		port.testClearCache();
+		
+	}
+
 }

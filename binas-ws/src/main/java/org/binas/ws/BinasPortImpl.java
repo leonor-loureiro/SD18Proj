@@ -170,6 +170,11 @@ public class BinasPortImpl implements BinasPortType {
 	public void testInit(int userInitialPoints) throws BadInit_Exception {
 		BinasManager.getInstance().setUserInitialPoints(userInitialPoints);
 	}
+	
+	@Override
+	public void testClearCache() {
+		BinasManager.getInstance().clearCache();
+	}
 
 	// View helpers ----------------------------------------------------------
 
@@ -282,4 +287,6 @@ public class BinasPortImpl implements BinasPortType {
 		faultInfo.message = message;
 		throw new BadInit_Exception(message, faultInfo);
 	}
+
+	
 }
