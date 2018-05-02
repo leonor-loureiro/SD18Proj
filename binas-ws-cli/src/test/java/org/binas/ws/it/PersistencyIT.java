@@ -18,7 +18,8 @@ public class PersistencyIT extends BaseIT {
     private String stationId1 = "T08_Station1";
 
     /**
-     *
+     * tests if a user created still exists even when binas' cache is cleared
+     * simulates state of an activated user if binas crashes or shuts down
      */
     @Test
     public void sucess_user_persistent() throws EmailExists_Exception, InvalidEmail_Exception, BadInit_Exception, UserNotExists_Exception {
@@ -31,6 +32,10 @@ public class PersistencyIT extends BaseIT {
         Assert.assertTrue(10 == client.getCredit(email));
     }
 
+    /**
+     * tests if user's credit changes remain aftre Binas' cache is cleared
+     * simulates state of a binas going down after user rented and returned Bina
+     */
     @Test
     public void sucess_user_persistent_2() throws EmailExists_Exception, InvalidEmail_Exception, BadInit_Exception, UserNotExists_Exception, NoBinaAvail_Exception, NoCredit_Exception, InvalidStation_Exception, AlreadyHasBina_Exception, FullStation_Exception, NoBinaRented_Exception {
         client.testInit(10);

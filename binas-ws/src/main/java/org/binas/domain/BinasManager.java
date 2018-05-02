@@ -100,11 +100,15 @@ public class BinasManager {
 	public String getStationWSName() {
 		return this.stationWSName;
 	}
-	
+
 	public int getQ() {
 		return Q;
 	}
 
+	/**
+	 * calculates Q based on the number of stations
+	 * @param nStations
+	 */
 	public void setQ(int nStations) {
 		Q = (int) Math.floor(nStations / 2) + 1; // such math wow
 	}
@@ -157,7 +161,7 @@ public class BinasManager {
 		}
 		
 		try {
-			getUpdatedUser(email, true);
+			readFromReplicas(email, true);
 			
 			//User exists in remote replica manager
 			throw new EmailExistsException();
@@ -167,7 +171,7 @@ public class BinasManager {
 			int tag = 0;
 			
 			//Updates remote replicas
-			writeback(email, credit, tag);
+			writeToReplicas(email, credit, tag);
 			
 			//Updates cache
 			return UserManager.getInstance().activateUser(email,credit, tag);
@@ -179,7 +183,7 @@ public class BinasManager {
 
 	/**
 	 * 
-	 * @param email
+	 * @param email user's email
 	 * @return credit of given user's email
 	 * @throws UserNotExistsException
 	 */
@@ -189,7 +193,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {	
 		}
 		try {
-			return getUpdatedUser(email, true).getCredit();
+			return readFromReplicas(email, true).getCredit();
 		}catch(InvalidEmailException iee) {
 			throw new UserNotExistsException();
 		}
@@ -216,7 +220,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = getUpdatedUser(email, false);
+				user = readFromReplicas(email, false);
 				
 			}catch(InvalidEmailException iee) {
 			}
@@ -240,7 +244,7 @@ public class BinasManager {
 
 			//Update remote replicas of user
 			try {
-				writeback(email, user.getCredit(), user.getTag()+1);
+				writeToReplicas(email, user.getCredit(), user.getTag()+1);
 			}catch(InvalidEmailException iee) {
 			}
 			
@@ -292,7 +296,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = getUpdatedUser(email, false);
+				user = readFromReplicas(email, false);
 				
 			}catch(InvalidEmailException iee) {
 			}
@@ -314,7 +318,7 @@ public class BinasManager {
 			
 			//Update remote replicas of user
 			try {
-				writeback(email, user.getCredit(), user.getTag() + 1);
+				writeToReplicas(email, user.getCredit(), user.getTag() + 1);
 			}catch(InvalidEmailException iee) {
 			}
 
@@ -348,7 +352,7 @@ public class BinasManager {
 	}
 	
 	/**
-	 * clears all user information
+	 * clears all user information saved locally in Binas
 	 */
 	public synchronized void clearCache() {
 		UserManager.getInstance().clear();
@@ -428,34 +432,39 @@ public class BinasManager {
 	 * Asks all stations for the balance value of user with given email
 	 * @param email
 	 * @param read
-	 * 		  true: if called by read operation (w/ writeback phase)
-	 * 		  false: if called by write operation (n/ writeback phase)
+	 * 		  true: if called by read operation (w/ writeToReplicas phase)
+	 * 		  false: if called by write operation (n/ writeToReplicas phase)
 	 * @return user with most recent credit and tag
 	 * @throws UserNotExistsException
 	 * @throws InvalidEmailException
 	 */
-	private User getUpdatedUser(String email, boolean read) throws UserNotExistsException, InvalidEmailException{
+	private User readFromReplicas(String email, boolean read) throws UserNotExistsException, InvalidEmailException{
 		List<BalanceView> userInfo;
 		List<Future<?> > futures = new ArrayList<>();
-		GetUpdatedUserCallBackHandler handler = new GetUpdatedUserCallBackHandler(); //callback handler
+		ReadFromReplicasCallBackHandler handler = new ReadFromReplicasCallBackHandler(); //callback handler
 		List<StationClient> stations = getAvailableStations();
 
 		// adds a callback for each replica
 		for(StationClient client : stations) {
 			futures.add(client.getBalanceAsync(email, handler));
 		}
-		
-		// wait for all Q responses
-		int i = 0;
-		while ( i < getQ()) {
-			i = 0;
+
+		// wait for all quorum responses
+		int completed;
+		while(true){
+			completed = 0;
 			for ( Future<?> fu : futures)
 				if( fu.isDone())
-					i++;
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-				// sleep interrupted is not an error
+					completed++;
+
+			if(completed >= getQ()){
+				break;
+			}else{
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					// sleep interrupted is not a relevant error in this context
+				}
 			}
 		}
 
@@ -463,7 +472,7 @@ public class BinasManager {
 		userInfo = handler.getResponses().stream().map(GetBalanceResponse::getBalance).collect(Collectors.toList());
 
 		if(!userInfo.isEmpty()) {
-			// Searches for most recent balance			
+			// Searches for most recent balance through tag
 			BalanceView balance = Collections.max(userInfo, new BalanceViewComparator());
 			
 			int credit = balance.getValue();
@@ -479,56 +488,51 @@ public class BinasManager {
 						break;
 					}
 				}
-				
 				if(doWriteback) {
-					//Update user remote replicas
-					writeback(email, credit, tag);	
+					writeToReplicas(email, credit, tag); //Update user remote replicas
 				}
 			}
-			
-			// Update user cache
-			return UserManager.getInstance().activateUser(email,credit, tag);
+			return UserManager.getInstance().activateUser(email,credit, tag); 	// Update user cache
 		}
-
 		// if handler's response is empty, means all responses had userNotExistsException
 		throw new UserNotExistsException();
 	}
 	
 	/**
-	 * Updates user replicas
+	 * Updates user's info in replicas
 	 * @param email
 	 * @param credit
 	 * @param tag
 	 * @throws InvalidEmailException
 	 */
-	private void writeback(String email, int credit, int tag) throws InvalidEmailException {
-		WriteBackHandler handler = new WriteBackHandler();
+	private void writeToReplicas(String email, int credit, int tag) throws InvalidEmailException {
+		WriteToReplicasHandler handler = new WriteToReplicasHandler();
 		List<StationClient> stations = getAvailableStations();
 		ArrayList<Future<?>> futures = new ArrayList<>();
-		int i, e;
+		int responses, errors;
 
 		for(StationClient client : stations) {
 			futures.add(client.setBalanceAsync(email, credit, tag, handler));
 		}
 
 		while (true) {
-			i=0;
-			e=0;
+			responses=0; // number of responses completed
+			errors=0; // number of errors
 			for (Future<?> f : futures) {
 				if (f.isDone()) {
 					// check for errors
 					try {
 						f.get();
-                        i++;
+                        responses++;
                     } catch (InterruptedException | ExecutionException e1) {
-                        e++;
+                        errors++;
                     }
 					// check error quorum
-					if (e == getQ()) {
+					if (errors == getQ()) {
 					    throw new InvalidEmailException();
                     }
 					// check response quorum
-					if ( i == getQ() ) {
+					if ( responses == getQ() ) {
 						return;
 					}
 				}
@@ -587,14 +591,17 @@ public class BinasManager {
 ////////////////////////////// CALLBACK HANDLERS //////////////////////////////////////
 
 	/**
+	 * <joke>
 	 * You may think you know what the following code does.
 	 * But you dont. Trust me.
 	 * Fiddle with it, and youll spend many a sleepless
 	 * night cursing the moment you thought youd be clever
 	 * enough to "optimize" the code below.
 	 * Now close this file and go play with something else.
+	 * </joke>
+	 * Function handles the callbacks from writes
 	 */
-    class WriteBackHandler implements AsyncHandler<SetBalanceResponse> {
+    class WriteToReplicasHandler implements AsyncHandler<SetBalanceResponse> {
 		@Override
 		public void handleResponse(Response<SetBalanceResponse> res) {
 			//   \( OwO )7  i'm useful
@@ -603,9 +610,9 @@ public class BinasManager {
 
 
 	/**
-	 * Class used to handle callback funtions in getUpdatedUser method
+	 * Class used to handle callback funtions in readFromReplicas method
 	 */
-	class GetUpdatedUserCallBackHandler implements AsyncHandler<GetBalanceResponse>{
+	class ReadFromReplicasCallBackHandler implements AsyncHandler<GetBalanceResponse>{
 		private ArrayList<GetBalanceResponse> resultList = new ArrayList<>(Q);
 
 		/**
