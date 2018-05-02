@@ -157,7 +157,7 @@ public class BinasManager {
 		}
 		
 		try {
-			getUpdatedUser(email);
+			getUpdatedUser(email, true);
 			
 			//User exists in remote replica manager
 			throw new EmailExistsException();
@@ -189,7 +189,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {	
 		}
 		try {
-			return getUpdatedUser(email).getCredit();
+			return getUpdatedUser(email, true).getCredit();
 		}catch(InvalidEmailException iee) {
 			throw new UserNotExistsException();
 		}
@@ -216,7 +216,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = getUpdatedUser(email);
+				user = getUpdatedUser(email, false);
 				
 			}catch(InvalidEmailException iee) {
 			}
@@ -292,7 +292,7 @@ public class BinasManager {
 		}catch(UserNotExistsException unee) {
 			try{
 				//checks if exists remote replica of user
-				user = getUpdatedUser(email);
+				user = getUpdatedUser(email, false);
 				
 			}catch(InvalidEmailException iee) {
 			}
@@ -423,14 +423,18 @@ public class BinasManager {
 
 	
 ///////////////////// REMOTE REPLICAS READ/WRITE //////////////////////////////
+
 	/**
 	 * Asks all stations for the balance value of user with given email
 	 * @param email
+	 * @param read
+	 * 		  true: if called by read operation (w/ writeback phase)
+	 * 		  false: if called by write operation (n/ writeback phase)
 	 * @return user with most recent credit and tag
 	 * @throws UserNotExistsException
 	 * @throws InvalidEmailException
 	 */
-	private User getUpdatedUser(String email) throws UserNotExistsException, InvalidEmailException{
+	private User getUpdatedUser(String email, boolean read) throws UserNotExistsException, InvalidEmailException{
 
 		List<BalanceView> userInfo;
 		List<Future<?> > futures = new ArrayList<>();
@@ -442,7 +446,7 @@ public class BinasManager {
 		for(StationClient client : stations) {
 			futures.add(client.getBalanceAsync(email, handler));
 		}
-
+		
 		// wait for all Q responses
 		int i = 0;
 		while ( i < getQ()) {
@@ -462,18 +466,21 @@ public class BinasManager {
 			int credit = balance.getValue();
 			int tag = balance.getTag();
 			
-			boolean doWriteback = false;
-			// Checks if remote replicas not all up to date
-			for(BalanceView b : userInfo) {
-				if(b.getTag() != balance.getTag()) {
-					doWriteback = true;
-					break;
+			//Writeback phase requested
+			if(read) { 
+				boolean doWriteback = false;
+				// Checks if remote replicas not all up to date
+				for(BalanceView b : userInfo) {
+					if(b.getTag() != balance.getTag()) {
+						doWriteback = true;
+						break;
+					}
 				}
-			}
-			
-			if(doWriteback) {
-				//Update user remote replicas
-				writeback(email, credit, tag);	
+				
+				if(doWriteback) {
+					//Update user remote replicas
+					writeback(email, credit, tag);	
+				}
 			}
 			
 			// Update user cache
@@ -571,7 +578,6 @@ public class BinasManager {
         }
     }
 	
-////////////////////////////////////////////////////////////////////////////////////////
 	
 	
 ////////////////////////////// CALLBACK HANDLERS //////////////////////////////////////
