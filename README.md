@@ -21,6 +21,7 @@ Leonor Loureiro	84736	leonor.filipa@tecnico.ulisboa.pt
 	[4] [T08-SD18Proj/binas-ws]$   		mvn exec:java
 	[5] [T08-SD18Proj/binas-ws-cli]$	mvn verify
 	
-	
+Note: if you are running windows, you can run install and tests by executing windowsTest.bat
+you can also run a demo on windows with demoTest.bat
 -------------------------------------------------------------------------------
 **FIM**
