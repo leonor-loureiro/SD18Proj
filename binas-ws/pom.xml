@@ -27,6 +27,8 @@
 
 		<station.ws.name>${group.id}_Station</station.ws.name>
 
+		<number_of_stations>3</number_of_stations>
+
 	</properties>
 	<dependencies>
 		<!-- UDDI Naming -->
@@ -110,6 +112,7 @@
 						<argument>${ws.url}</argument>
 						<argument>${uddi.url}</argument>
 						<argument>${station.ws.name}</argument>
+						<argument>${number_of_stations}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

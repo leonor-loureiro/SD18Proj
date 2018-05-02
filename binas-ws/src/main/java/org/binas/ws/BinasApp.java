@@ -7,7 +7,7 @@ public class BinasApp {
 	public static void main(String[] args) throws Exception {
 		
 		// Check arguments
-		if (args.length < 4) {
+		if (args.length < 5) {
 			System.err.println("Argument(s) missing!");
 			System.err.println("Usage: java " + BinasApp.class.getName() + "wsName wsURL OR wsName wsURL uddiURL");
 			return;
@@ -16,13 +16,14 @@ public class BinasApp {
 		String wsURL = args[1];
 		String UDDINaming = args[2];
 		String stationWSName = args[3];
+		String numberOfStations = args[4];
 
 
 		BinasEndpointManager endpoint = new BinasEndpointManager(UDDINaming, wsName, wsURL);
 		BinasManager.getInstance().setId(wsName);
 		BinasManager.getInstance().setUddiUrl(UDDINaming);
 		BinasManager.getInstance().setStationWSName(stationWSName);
-
+		BinasManager.getInstance().setQ(Integer.parseInt(numberOfStations));
 
 		System.out.println(BinasApp.class.getSimpleName() + " running with stations name: " + stationWSName);
 
