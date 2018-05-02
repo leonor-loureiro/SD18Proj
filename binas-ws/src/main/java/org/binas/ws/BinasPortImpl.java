@@ -42,6 +42,12 @@ public class BinasPortImpl implements BinasPortType {
 		BinasManager.getInstance().setUddiUrl(this.endpointManager.getUddiURL());
 	}
 
+	/**
+	 * Finds the numberOfStations closest stations to given coordinates
+	 * @param numberOfStations number of stations
+	 * @param coordinates coordinates
+	 * @return numberOfStations closest stations to given coordinates
+	 */
 	@Override
 	public List<StationView> listStations(Integer numberOfStations, CoordinatesView coordinates) {
 		List<StationView> list = new ArrayList<>();
@@ -62,6 +68,12 @@ public class BinasPortImpl implements BinasPortType {
 		}
 	}
 
+	/**
+	 * Finds the information of a certain station
+	 * @param stationId the station Id of which you want the info
+	 * @return the information of requested Id's station
+	 * @throws InvalidStation_Exception when the station id doesn't exist
+	 */
 	@Override
 	public StationView getInfoStation(String stationId) throws InvalidStation_Exception {
 		try {
@@ -74,6 +86,12 @@ public class BinasPortImpl implements BinasPortType {
 		return null;
 	}
 
+	/**
+	 * finds current credit associated with given user
+	 * @param email email that identifies the user
+	 * @return current credit of given user
+	 * @throws UserNotExists_Exception if there is no record of the user in server
+	 */
 	@Override
 	public int getCredit(String email) throws UserNotExists_Exception {
 		try {
@@ -84,6 +102,13 @@ public class BinasPortImpl implements BinasPortType {
 		return 0;
 	}
 
+	/**
+	 * creates a register of the user if it doesn't yet exist
+	 * @param email user's identifier to the system
+	 * @return the just created user's information
+	 * @throws EmailExists_Exception the given email already exists
+	 * @throws InvalidEmail_Exception the email format is not valid follow format name@domain
+	 */
 	@Override
 	public UserView activateUser(String email) throws EmailExists_Exception, InvalidEmail_Exception {
 		try {
@@ -96,6 +121,16 @@ public class BinasPortImpl implements BinasPortType {
 		return null;
 	}
 
+	/**
+	 * rents a bina from given station to given user
+	 * @param stationId stations' identifier
+	 * @param email user's identifier
+	 * @throws AlreadyHasBina_Exception when user already has a bina
+	 * @throws InvalidStation_Exception when the station does not exist or is not available
+	 * @throws NoBinaAvail_Exception when there are no binas available at given station
+	 * @throws NoCredit_Exception when user doesn't have enough credit
+	 * @throws UserNotExists_Exception  when the email given is not associated to any user
+	 */
 	@Override
 	public void rentBina(String stationId, String email) throws AlreadyHasBina_Exception, InvalidStation_Exception,
 			NoBinaAvail_Exception, NoCredit_Exception, UserNotExists_Exception {
@@ -119,6 +154,15 @@ public class BinasPortImpl implements BinasPortType {
 
 	}
 
+	/**
+	 * returns a already rented bina by a user to a station
+	 * @param stationId station's identifier
+	 * @param email user's identifier
+	 * @throws FullStation_Exception when the station is already full and can't take more binas
+	 * @throws InvalidStation_Exception when the station doesn't exist or isn't available
+	 * @throws NoBinaRented_Exception when the user had no bina rented
+	 * @throws UserNotExists_Exception when there is no user was found with given email
+	 */
 	@Override
 	public void returnBina(String stationId, String email)
 			throws FullStation_Exception, InvalidStation_Exception, NoBinaRented_Exception, UserNotExists_Exception {
@@ -166,11 +210,19 @@ public class BinasPortImpl implements BinasPortType {
 		}
 	}
 
+	/**
+	 * changes the value with which every user from now on is created with
+	 * @param userInitialPoints the credits that each user will now start with
+	 * @throws BadInit_Exception when the points given aren't valid
+	 */
 	@Override
 	public void testInit(int userInitialPoints) throws BadInit_Exception {
 		BinasManager.getInstance().setUserInitialPoints(userInitialPoints);
 	}
-	
+
+	/**
+	 * clears the cache of local user info kept by the Binas
+	 */
 	@Override
 	public void testClearCache() {
 		BinasManager.getInstance().clearCache();

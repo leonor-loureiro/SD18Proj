@@ -26,7 +26,7 @@ public class BinasApp {
 		BinasManager.getInstance().setQ(Integer.parseInt(numberOfStations));
 
 		System.out.println(BinasApp.class.getSimpleName() + " running with stations name: " + stationWSName);
-
+		System.out.println("Setup for " + numberOfStations + " stations for the replication system.");
 		
 		try {
 			endpoint.start();
