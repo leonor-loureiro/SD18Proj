@@ -35,10 +35,18 @@ public class User {
 		return credit;
 	}
 
+	/**
+	 * Decreases user credit by one
+	 * @return new credit
+	 */
 	public synchronized int removeOneCredit() {
 		return credit--;
 	}
 	
+	/**
+	 * Adds bonus to user credit
+	 * @param bonus
+	 */
 	public synchronized void receiveBonus(int bonus) {
 		this.credit += bonus;
 	}
@@ -55,5 +63,8 @@ public class User {
 		this.tag = tag;
 	}
 
+	public synchronized void updateTag() {
+		tag++;
+	}
 
 }

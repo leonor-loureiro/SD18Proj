@@ -66,6 +66,8 @@ public class BinasManager {
 	public static synchronized BinasManager getInstance() {
 		return SingletonHolder.INSTANCE;
 	}
+	
+/////////////////////// GETTERS/SETTERS /////////////////////////////
 
 	public void setId(String id) {
 		this.id = id;
@@ -107,36 +109,7 @@ public class BinasManager {
 		Q = q;
 	}
 
-	/**
-	 * Checks if station ID matches Binas' Station ID format
-	 * @param stationId
-	 * @return true if matches, false otherwise
-	 */
-	private boolean isValidStationId(String stationId) {
-		return stationId.matches("^" + getStationWSName() + "[a-zA-Z0-9]+$"); 
-	}
-	
-    /**
-     * Pings all stations
-     * @param wsName pingerID
-     * @return concatenated result
-     */
-    public String testPing(String wsName) {
-        return getAvailableStations()
-                .stream()
-                .map(station -> station.testPing(wsName))
-                .collect(Collectors.joining("\n", "", "\n"));
-    }
-
-    /**
-     * Gets user from email
-     * @param email
-     * @return Found user
-     * @throws UserNotExistsException if not found
-     */
-	public synchronized User getUserByEmail(String email) throws UserNotExistsException {
-		return UserManager.getInstance().getUserByEmail(email);
-	}
+//////////////////// BINAS OPERATIONS //////////////////////////
 	
 	/**
 	 * Lists n stations closest to coordinates in crescent order. Connects to UDDI
@@ -166,11 +139,281 @@ public class BinasManager {
 		return stations.subList(0, n);
 	}
 
+	
+    /**
+     * Activates user
+     * @param email used to register the new user
+     * @return new User
+     * @throws InvalidEmailException
+     * @throws EmailExistsException
+     */
+	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
+				
+		try {
+			UserManager.getInstance().getUserByEmail(email);
+			throw new EmailExistsException();
+		}catch(UserNotExistsException unee) {
+			//User not in cache
+		}
+		
+		try {
+			getUpdatedUser(email);
+			
+			//User exists in remote replica manager
+			throw new EmailExistsException();
+			
+		}catch(UserNotExistsException unee) {
+			int credit = getUserInitialPoints();
+			int tag = 0;
+			
+			//Updates remote replicas
+			writeback(email, credit, tag);
+			
+			//Updates cache
+			return UserManager.getInstance().activateUser(email,credit, tag);
+
+		}
+	}
 
 
 
+	/**
+	 * 
+	 * @param email
+	 * @return credit of given user's email
+	 * @throws UserNotExistsException
+	 */
+	public synchronized int getCredit(String email) throws UserNotExistsException {
+		try {
+			return getUserByEmail(email).getCredit();
+		}catch(UserNotExistsException unee) {	
+		}
+		try {
+			return getUpdatedUser(email).getCredit();
+		}catch(InvalidEmailException iee) {
+			throw new UserNotExistsException();
+		}
+	}
+
+	/**
+	 * Rents a bina from a given stations
+	 * @param stationId
+	 * @param email
+	 * @throws UserNotExistsException
+	 * @throws InvalidStationException
+	 * @throws NoBinaAvailException
+	 * @throws AlreadyHasBinaException
+	 * @throws NoCreditException
+	 */
+	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
+			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
+
+		User user = null;
+		try{
+			//checks if user is in cache
+			user = getUserByEmail(email);
+			
+		}catch(UserNotExistsException unee) {
+			try{
+				//checks if exists remote replica of user
+				user = getUpdatedUser(email);
+				
+			}catch(InvalidEmailException iee) {
+			}
+		}
+		
+		if (user.getHasBina()) {
+			throw new AlreadyHasBinaException();
+		}
+		if (user.getCredit() < 1) {
+			throw new NoCreditException();
+		}
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
+		try {
+			StationClient client = new StationClient(uddiURL, stationId);
+			client.getBina();
+			user.removeOneCredit();
+			user.setHasBina(true);
+			user.updateTag();
+
+			//Update remote replicas of user
+			try {
+				writeback(email, user.getCredit(), user.getTag()+1);
+			}catch(InvalidEmailException iee) {
+			}
+			
+		} catch (NoBinaAvail_Exception nbae) {
+			throw new NoBinaAvailException();
+
+		} catch (StationClientException sce) {
+			throw new InvalidStationException();
+		}
+
+	}
+
+	/**
+	 * Returns information for given station id in view form
+	 * @param stationId
+	 * @return StationView with station's information
+	 * @throws InvalidStationException
+	 */
+	public StationView getInfoStation(String stationId) throws InvalidStationException {
+		
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
+		try {
+			StationClient client = new StationClient(uddiURL, stationId);
+			return client.getInfo();
+		} catch (StationClientException sce) {
+			throw new InvalidStationException();
+		}
+	}
+
+	/**
+	 * Returns given bina to the station if associated to proper email
+	 * @param stationId
+	 * @param email user's email
+	 * @throws InvalidStationException
+	 * @throws UserNotExistsException
+	 * @throws NoSlotAvail_Exception
+	 * @throws NoBinaRentedException
+	 */
+	public synchronized void returnBina(String stationId, String email)
+			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
+
+		User user = null;
+		try{
+			//checks if user is in cache
+			user = getUserByEmail(email);
+			
+		}catch(UserNotExistsException unee) {
+			try{
+				//checks if exists remote replica of user
+				user = getUpdatedUser(email);
+				
+			}catch(InvalidEmailException iee) {
+			}
+		}
+
+		if (!user.getHasBina()) {
+			throw new NoBinaRentedException();
+		}
+
+		if(stationId == null || !isValidStationId(stationId))
+			throw new InvalidStationException();
+		
+		try {
+			StationClient client = new StationClient(uddiURL, stationId);
+			int bonus = client.returnBina();
+			user.setHasBina(false);
+			user.receiveBonus(bonus);
+			user.updateTag();
+			
+			//Update remote replicas of user
+			try {
+				writeback(email, user.getCredit(), user.getTag() + 1);
+			}catch(InvalidEmailException iee) {
+			}
+
+		} catch (StationClientException e) {
+			throw new InvalidStationException();
+		}
+	}
+
+////////////////// BINAS TEST OPERATIONS ////////////////////
+	
+    /**
+     * Pings all stations
+     * @param wsName pingerID
+     * @return concatenated result
+     */
+    public String testPing(String wsName) {
+        return getAvailableStations()
+                .stream()
+                .map(station -> station.testPing(wsName))
+                .collect(Collectors.joining("\n", "", "\n"));
+    }
+	
+	/**
+	 * clears all stations and user information
+	 */
+	public synchronized void clear() {
+		UserManager.getInstance().clear();
+		for (StationClient station : getAvailableStations())
+			station.testClear();
+		
+	}
+	
+	
+    /**
+     * Initializes station with given parameters
+     * @param stationId target station
+     * @param x
+     * @param y
+     * @param capacity
+     * @param returnPrize
+     * @throws StationClientException
+     * @throws Exception
+     */
+	public void initStation(String stationId, int x, int y, int capacity, int returnPrize)
+			throws StationClientException, Exception {
+		try {
+			StationClient client = new StationClient(uddiURL, stationId);
+			client.testInit(x, y, capacity, returnPrize);
+		} catch (StationClientException e) {
+			throw new InvalidStationException();
+		} catch (BadInit_Exception e) {
+			throw new Exception();
+		}
+	}
+	
+////////////////////////// AUX /////////////////////////////////
+	
+	/**
+	 * Checks if station ID matches Binas' Station ID format
+	 * @param stationId
+	 * @return true if matches, false otherwise
+	 */
+	private boolean isValidStationId(String stationId) {
+		return stationId.matches("^" + getStationWSName() + "[a-zA-Z0-9]+$"); 
+	}
+	
 
 
+    /**
+     * Gets user from email
+     * @param email
+     * @return Found user
+     * @throws UserNotExistsException if not found
+     */
+	public synchronized User getUserByEmail(String email) throws UserNotExistsException {
+		return UserManager.getInstance().getUserByEmail(email);
+	}
+	
+
+	/**
+	 * @return Available Stations' connection
+	 */
+	private List<StationClient> getAvailableStations() {
+		List<StationClient> clients = new ArrayList<>();
+		try {
+			UDDINaming uddi = new UDDINaming(uddiURL);
+			Collection<UDDIRecord> uddiRecords = uddi.listRecords(stationWSName + "%%%%%%%%%%%");
+
+			for (UDDIRecord record : uddiRecords)
+				clients.add(new StationClient(record.getUrl()));
+			
+		} catch (StationClientException | UDDINamingException e) {
+			System.out.println("No stations available or found.");
+		}
+		return clients;
+	}
+
+	
+///////////////////// REMOTE REPLICAS READ/WRITE //////////////////////////////
 	/**
 	 * Asks all stations for the balance value of user with given email
 	 * @param email
@@ -260,248 +503,7 @@ public class BinasManager {
 		}
 	}
 	
-	
-    /**
-     * Activates user
-     * @param email used to register the new user
-     * @return new User
-     * @throws InvalidEmailException
-     * @throws EmailExistsException
-     */
-	public synchronized User activateUser(String email) throws InvalidEmailException, EmailExistsException {
-		
-		/* Testes */
-//		try {
-//			StationClient client = new StationClient(uddiURL, "T08_Station1");
-//			client.setBalance(email,300,1);
-//			
-//			client = new StationClient(uddiURL, "T08_Station2");
-//			client.setBalance(email,50,2);
-//		} catch (Exception sce) {
-//			
-//		}
-		/* Testes Fim */
-		
-		try {
-			UserManager.getInstance().getUserByEmail(email);
-			throw new EmailExistsException();
-		}catch(UserNotExistsException unee) {
-			//User not in cache
-		}
-		
-		try {
-			getUpdatedUser(email);
-			
-			//User exists in remote replica manager
-			throw new EmailExistsException();
-			
-		}catch(UserNotExistsException unee) {
-			int credit = getUserInitialPoints();
-			int tag = 0;
-			
-			//Updates remote replicas
-			writeback(email, credit, tag);
-			
-			//Updates cache
-			return UserManager.getInstance().activateUser(email,credit, tag);
-
-		}
-	}
-
-	/**
-	 * clears all stations and user information
-	 */
-	public synchronized void clear() {
-		UserManager.getInstance().clear();
-		for (StationClient station : getAvailableStations())
-			station.testClear();
-		
-	}
-
-	/**
-	 * 
-	 * @param email
-	 * @return credit of given user's email
-	 * @throws UserNotExistsException
-	 */
-	public synchronized int getCredit(String email) throws UserNotExistsException {
-		try {
-			return getUserByEmail(email).getCredit();
-		}catch(UserNotExistsException unee) {	
-		}
-		try {
-			return getUpdatedUser(email).getCredit();
-		}catch(InvalidEmailException iee) {
-			throw new UserNotExistsException();
-		}
-	}
-
-	/**
-	 * Rents a bina from a given stations
-	 * @param stationId
-	 * @param email
-	 * @throws UserNotExistsException
-	 * @throws InvalidStationException
-	 * @throws NoBinaAvailException
-	 * @throws AlreadyHasBinaException
-	 * @throws NoCreditException
-	 */
-	public synchronized void rentBina(String stationId, String email) throws UserNotExistsException, InvalidStationException,
-			NoBinaAvailException, AlreadyHasBinaException, NoCreditException {
-
-		User user = null;
-		try{
-			//checks if user is in cache
-			user = getUserByEmail(email);
-			
-		}catch(UserNotExistsException unee) {
-			try{
-				//checks if exists remote replica of user
-				user = getUpdatedUser(email);
-				
-			}catch(InvalidEmailException iee) {
-			}
-		}
-		
-		if (user.getHasBina()) {
-			throw new AlreadyHasBinaException();
-		}
-		if (user.getCredit() < 1) {
-			throw new NoCreditException();
-		}
-		if(stationId == null || !isValidStationId(stationId))
-			throw new InvalidStationException();
-		
-		try {
-			StationClient client = new StationClient(uddiURL, stationId);
-			client.getBina();
-			user.removeOneCredit();
-			user.setHasBina(true);
-
-			//Update remote replicas of user
-			try {
-				writeback(email, user.getCredit(), user.getTag());
-			}catch(InvalidEmailException iee) {
-			}
-			
-		} catch (NoBinaAvail_Exception nbae) {
-			throw new NoBinaAvailException();
-
-		} catch (StationClientException sce) {
-			throw new InvalidStationException();
-		}
-
-	}
-
-	/**
-	 * Returns information for given station id in view form
-	 * @param stationId
-	 * @return StationView with station's information
-	 * @throws InvalidStationException
-	 */
-	public StationView getInfoStation(String stationId) throws InvalidStationException {
-		
-		if(stationId == null || !isValidStationId(stationId))
-			throw new InvalidStationException();
-		
-		try {
-			StationClient client = new StationClient(uddiURL, stationId);
-			return client.getInfo();
-		} catch (StationClientException sce) {
-			throw new InvalidStationException();
-		}
-	}
-
-	/**
-	 * Returns given bina to the station if associated to proper email
-	 * @param stationId
-	 * @param email user's email
-	 * @throws InvalidStationException
-	 * @throws UserNotExistsException
-	 * @throws NoSlotAvail_Exception
-	 * @throws NoBinaRentedException
-	 */
-	public synchronized void returnBina(String stationId, String email)
-			throws InvalidStationException, UserNotExistsException, NoSlotAvail_Exception, NoBinaRentedException {
-
-		User user = null;
-		try{
-			//checks if user is in cache
-			user = getUserByEmail(email);
-			
-		}catch(UserNotExistsException unee) {
-			try{
-				//checks if exists remote replica of user
-				user = getUpdatedUser(email);
-				
-			}catch(InvalidEmailException iee) {
-			}
-		}
-
-		if (!user.getHasBina()) {
-			throw new NoBinaRentedException();
-		}
-
-		if(stationId == null || !isValidStationId(stationId))
-			throw new InvalidStationException();
-		
-		try {
-			StationClient client = new StationClient(uddiURL, stationId);
-			int bonus = client.returnBina();
-			user.setHasBina(false);
-			user.receiveBonus(bonus);
-			
-			//Update remote replicas of user
-			try {
-				writeback(email, user.getCredit(), user.getTag());
-			}catch(InvalidEmailException iee) {
-			}
-
-		} catch (StationClientException e) {
-			throw new InvalidStationException();
-		}
-	}
-
-    /**
-     * Initializes station with given parameters
-     * @param stationId target station
-     * @param x
-     * @param y
-     * @param capacity
-     * @param returnPrize
-     * @throws StationClientException
-     * @throws Exception
-     */
-	public void initStation(String stationId, int x, int y, int capacity, int returnPrize)
-			throws StationClientException, Exception {
-		try {
-			StationClient client = new StationClient(uddiURL, stationId);
-			client.testInit(x, y, capacity, returnPrize);
-		} catch (StationClientException e) {
-			throw new InvalidStationException();
-		} catch (BadInit_Exception e) {
-			throw new Exception();
-		}
-	}
-
-	/**
-	 * @return Available Stations' connection
-	 */
-	private List<StationClient> getAvailableStations() {
-		List<StationClient> clients = new ArrayList<>();
-		try {
-			UDDINaming uddi = new UDDINaming(uddiURL);
-			Collection<UDDIRecord> uddiRecords = uddi.listRecords(stationWSName + "%%%%%%%%%%%");
-
-			for (UDDIRecord record : uddiRecords)
-				clients.add(new StationClient(record.getUrl()));
-			
-		} catch (StationClientException | UDDINamingException e) {
-			System.out.println("No stations available or found.");
-		}
-		return clients;
-	}
-
+////////////////////////// COMPARATORS ////////////////////////////////
 	/**
 	 * Sorts Stations views by distance to given coordinate point
 	 * @param stations
@@ -546,6 +548,11 @@ public class BinasManager {
             return (b1.getTag() - b2.getTag());
         }
     }
+	
+////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+////////////////////////////// CALLBACK HANDLERS //////////////////////////////////////
 
 	/**
 	 * You may think you know what the following code does.
