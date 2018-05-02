@@ -1,36 +1,18 @@
 package org.binas.domain;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.binas.domain.exception.AlreadyHasBinaException;
-import org.binas.domain.exception.EmailExistsException;
-import org.binas.domain.exception.InvalidEmailException;
-import org.binas.domain.exception.InvalidStationException;
-import org.binas.domain.exception.NoBinaAvailException;
-import org.binas.domain.exception.NoBinaRentedException;
-import org.binas.domain.exception.NoCreditException;
-import org.binas.domain.exception.UserNotExistsException;
-import org.binas.station.ws.BadInit_Exception;
-import org.binas.station.ws.BalanceView;
-import org.binas.station.ws.CoordinatesView;
-import org.binas.station.ws.InvalidEmail_Exception;
-import org.binas.station.ws.NoBinaAvail_Exception;
-import org.binas.station.ws.NoSlotAvail_Exception;
-import org.binas.station.ws.StationView;
-import org.binas.station.ws.UserNotExists_Exception;
+import org.binas.domain.exception.*;
+import org.binas.station.ws.*;
 import org.binas.station.ws.cli.StationClient;
 import org.binas.station.ws.cli.StationClientException;
-
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
+
+import javax.xml.ws.AsyncHandler;
+import javax.xml.ws.Response;
+import java.util.*;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 /**
  * Domain Root of Binas servers
@@ -217,13 +199,24 @@ public class BinasManager {
 	 * @throws InvalidEmailException
 	 */
 	private void writeback(String email, int credit, int tag) throws InvalidEmailException {
-		try {
-			List<StationClient> stations = getAvailableStations();
-			for(StationClient client : stations) {
-				client.setBalance(email, credit, tag);
+		WriteBackHandler handler = new WriteBackHandler();
+		List<StationClient> stations = getAvailableStations();
+		ArrayList<Future<?>> futures = new ArrayList<>();
+		int i;
+
+		for(StationClient client : stations) {
+			futures.add(client.setBalanceAsync(email, credit, tag, handler));
+		}
+
+		while (true) {
+			i=0;
+			for (Future<?> f : futures) {
+				if (f.isDone()) {
+					if ( ++i == getQ() ) {
+						return;
+					}
+				}
 			}
-		}catch(InvalidEmail_Exception iee) {
-			throw new InvalidEmailException();
 		}
 	}
 	
@@ -476,6 +469,12 @@ public class BinasManager {
             return (b1.getTag() - b2.getTag());
         }
     }
-	
-	
+
+
+    class WriteBackHandler implements AsyncHandler<SetBalanceResponse> {
+		@Override
+		public void handleResponse(Response<SetBalanceResponse> res) {
+			//   \( OwO )7  i'm useful
+		}
+	}
 }
