@@ -1,7 +1,10 @@
 <handler-chains xmlns="http://java.sun.com/xml/ns/javaee">
 	<handler-chain>
 		<handler>
-			<handler-class>binas.ws.handler.LogHandler</handler-class>
+			<handler-class>binas.ws.handler.KerberosClientHandler</handler-class>
+		</handler>
+		<handler>
+			<handler-class>binas.ws.handler.PrettyLogHandler</handler-class>
 		</handler>
 	</handler-chain>
 </handler-chains>   
