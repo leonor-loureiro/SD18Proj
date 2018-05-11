@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+
+<handler-chains xmlns="http://java.sun.com/xml/ns/javaee">
+    <handler-chain>
+  		<handler>
+            <handler-class>binas.ws.handler.LogHandler</handler-class>
+        </handler>
+        <handler>
+            <handler-class>binas.ws.handler.BinasServerHandler</handler-class>
+        </handler>
+        <handler>
+            <handler-class>binas.ws.handler.LogHandler</handler-class>
+        </handler>
+    </handler-chain>
+</handler-chains>

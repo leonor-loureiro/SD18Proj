@@ -4,6 +4,7 @@ package org.binas.ws;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.jws.HandlerChain;
 import javax.jws.WebService;
 
 import org.binas.domain.BinasManager;
@@ -32,6 +33,7 @@ import org.binas.station.ws.cli.StationClientException;
 	targetNamespace = "http://ws.binas.org/", 
 	serviceName = "BinasService"
 )
+@HandlerChain(file = "/binas-ws_handler-chain.xml")
 public class BinasPortImpl implements BinasPortType {
 
 	private BinasEndpointManager endpointManager;
