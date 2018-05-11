@@ -47,40 +47,43 @@ public class BinasClientApp {
 		  **********************************/
         
         
-		 String email = "username@domain";
-		 String stationID = "T08_Station1";
-		 int bonus = 5;
-		 
-		 client.testInitStation(stationID, 20, 40, 10, bonus);
-		 System.out.println(stationID + " initiallized with bonus " + bonus);
-		 
-		 
-		 /**
-		  * F1 - Creates user successfully
-		  * 
-		  * F2 - First execution: Creates user successfully
-		  *    - Second execution: User already exists (in remote replica manager)
-		  */
-		 try {
-			 client.testInit(20);
-			 
-			 UserView user = client.activateUser(email);
-			 System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
-			 
-		 }catch(EmailExists_Exception eee) {
-			 System.out.println("Already exists user " + email + " with credit: " + client.getCredit(email));
-		 }
-		 
-		 
-		 client.rentBina(stationID, email);
-		 System.out.println("Bina rented from " + stationID);
-		 
-		 client.returnBina(stationID, email);
-		 System.out.println("Bina returned to " + stationID);
-		 
-		 
-		 System.out.println("User " + email + " current credit is " + client.getCredit(email));
-		 
+//		 String email = "username@domain";
+//		 String stationID = "T08_Station1";
+//		 int bonus = 5;
+//		 
+//		 client.testInitStation(stationID, 20, 40, 10, bonus);
+//		 System.out.println(stationID + " initiallized with bonus " + bonus);
+//		 
+//		 
+//		 /**
+//		  * F1 - Creates user successfully
+//		  * 
+//		  * F2 - First execution: Creates user successfully
+//		  *    - Second execution: User already exists (in remote replica manager)
+//		  */
+//		 try {
+//			 client.testInit(20);
+//			 
+//			 UserView user = client.activateUser(email);
+//			 System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
+//			 
+//		 }catch(EmailExists_Exception eee) {
+//			 System.out.println("Already exists user " + email + " with credit: " + client.getCredit(email));
+//		 }
+//		 
+//		 
+//		 client.rentBina(stationID, email);
+//		 System.out.println("Bina rented from " + stationID);
+//		 
+//		 client.returnBina(stationID, email);
+//		 System.out.println("Bina returned to " + stationID);
+//		 
+//		 
+//		 System.out.println("User " + email + " current credit is " + client.getCredit(email));
+//		 
+        
+        String pingResult = client.testPing("Hello friend!");
+        System.out.println(pingResult);
 		 
 		 
 		 

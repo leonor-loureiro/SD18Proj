@@ -47,6 +47,7 @@
 			<artifactId>station-ws-cli</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
+		<!-- Handlers -->
 		<dependency>
 			<groupId>org.binas.T08</groupId>
 			<artifactId>ws-handlers</artifactId>
