@@ -34,16 +34,15 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 	// Namespace
 	private static final String KERBY_NS = "urn:binas.client.kerby";
 
-	// PREFIX
+
 	private static final String SOAP_PREFIX = "b";
 	private static final String SOAP_EMAIL_TAG = "email";
 
 	private static final String REQ_TIME_HEADER = "requestedTime";
 
-	// TODO find better way to send to outGoing
-	//TODO: change to RequestTime reqTime = null;
-	private static Date reqTime = null;
-	private static Key lastSessionKey = null;
+	// CONTEXT
+	private static final String CONTEXT_REQ_TIME = "context_time";
+	private static final String CONTEXT_LAST_SESSION = "context_session_key";
 
 	@Override
 	public void close(MessageContext arg0) {
@@ -75,7 +74,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 	}
 
 	private boolean handleOutboundMessage(SOAPMessageContext smc) {
-		//TODO!!!!!!!!!!!!!
+		Date reqTime = (Date) smc.get(CONTEXT_REQ_TIME);
+		Key lastSessionKey = (Key) smc.get(CONTEXT_LAST_SESSION);
+
 
 		try {
 			if(reqTime != null && lastSessionKey != null){
@@ -89,7 +90,6 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 				if (sh == null)
 					sh = se.addHeader();
 
-				//TODO: may need to change to proper date
 				CipheredView cipheredReqTime = new RequestTime(reqTime).cipher(lastSessionKey);
 
 				// add header element (name, namespace prefix, namespace)
@@ -98,9 +98,7 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 				String ticketString = new CipherClerk().cipherToString(cipheredReqTime);
 				ticketHeader.addTextNode(ticketString);
-				
-				reqTime =  null;
-				lastSessionKey = null;
+
 			}
 		} catch (SOAPException e) {
 			throw new RuntimeException("error handling header in outbound");
@@ -148,6 +146,10 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 			auth = extractAuth(se, sessionKey);
 		} catch (KerbyException e) { throw new RuntimeException("unable to extract auth"); }
 
+		try{
+			auth.validate();
+		}catch(KerbyException e) {throw new RuntimeException("unable to validate auth");}
+
 
 		//	4.	Verificar que o username no ticket coincide com o username no autentificador
 		if( !auth.getX().equals(ticket.getX()) ){
@@ -156,8 +158,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 
 		//	5.	Guardar o request time para posteriormente incluir na mensagem de resposta
-		reqTime =  auth.getTimeRequest();
-		lastSessionKey = sessionKey;
+		Date reqTime =  auth.getTimeRequest();
+		smc.put(CONTEXT_REQ_TIME, reqTime);
+		smc.put(CONTEXT_LAST_SESSION, sessionKey);
 
 		return true;
 	}
