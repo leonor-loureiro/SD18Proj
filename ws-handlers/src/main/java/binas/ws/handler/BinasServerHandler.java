@@ -36,8 +36,14 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 	// PREFIX
 	private static final String SOAP_PREFIX = "b";
-
 	private static final String SOAP_EMAIL_TAG = "email";
+
+	private static final String REQ_TIME_HEADER = "requestedTime";
+
+	// TODO find better way to send to outGoing
+	//TODO: change to RequestTime reqTime = null;
+	private static Date reqTime = null;
+	private static Key lastSessionKey = null;
 
 	@Override
 	public void close(MessageContext arg0) {
@@ -70,6 +76,38 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 	private boolean handleOutboundMessage(SOAPMessageContext smc) {
 		//TODO!!!!!!!!!!!!!
+
+		try {
+			if(reqTime != null && lastSessionKey != null){
+				// get SOAP envelope
+				SOAPMessage msg = smc.getMessage();
+				SOAPPart sp = msg.getSOAPPart();
+				SOAPEnvelope se = sp.getEnvelope();
+
+				// add header
+				SOAPHeader sh = se.getHeader();
+				if (sh == null)
+					sh = se.addHeader();
+
+				//TODO: may need to change to proper date
+				CipheredView cipheredReqTime = new RequestTime(reqTime).cipher(lastSessionKey);
+
+				// add header element (name, namespace prefix, namespace)
+				Name name = se.createName(REQ_TIME_HEADER, SOAP_PREFIX, SOAP_EMAIL_TAG);
+				SOAPHeaderElement ticketHeader = sh.addHeaderElement(name);
+
+				String ticketString = new CipherClerk().cipherToString(cipheredReqTime);
+				ticketHeader.addTextNode(ticketString);
+				
+				reqTime =  null;
+				lastSessionKey = null;
+			}
+		} catch (SOAPException e) {
+			throw new RuntimeException("error handling header in outbound");
+		} catch (KerbyException e) {
+			throw new RuntimeException("error ciphering date in outbound");
+		}
+
 		return true;
 	}
 
@@ -118,7 +156,8 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 
 		//	5.	Guardar o request time para posteriormente incluir na mensagem de resposta
-		//TODO :(
+		reqTime =  auth.getTimeRequest();
+		lastSessionKey = sessionKey;
 
 		return true;
 	}
