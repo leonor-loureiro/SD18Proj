@@ -85,7 +85,10 @@ public class BinasClientApp {
         String pingResult = client.testPing("Hello friend!");
         System.out.println(pingResult);
 		 
-		 
+        UserView user = client.activateUser("alice@T08.binas.org");
+        System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
+        
+		
 		 
 	 }
 }

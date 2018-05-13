@@ -15,6 +15,7 @@ import javax.xml.ws.handler.soap.SOAPMessageContext;
 import pt.ulisboa.tecnico.sdis.kerby.*;
 
 import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
@@ -33,6 +34,7 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 	// Namespace
 	private static final String KERBY_NS = "urn:binas.client.kerby";
+	private static final String SERVER_NS = "urn:binas.server.authentication";
 
 
 	private static final String SOAP_PREFIX = "b";
@@ -93,11 +95,11 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 				CipheredView cipheredReqTime = new RequestTime(reqTime).cipher(lastSessionKey);
 
 				// add header element (name, namespace prefix, namespace)
-				Name name = se.createName(REQ_TIME_HEADER, SOAP_PREFIX, SOAP_EMAIL_TAG);
-				SOAPHeaderElement ticketHeader = sh.addHeaderElement(name);
-
-				String ticketString = new CipherClerk().cipherToString(cipheredReqTime);
-				ticketHeader.addTextNode(ticketString);
+				Name name = se.createName(REQ_TIME_HEADER, SOAP_PREFIX, SERVER_NS);
+				SOAPHeaderElement reqTimeHeader = sh.addHeaderElement(name);
+				
+				String reqTimeString = printBase64Binary(cipheredReqTime.getData());
+				reqTimeHeader.addTextNode(reqTimeString);
 
 			}
 		} catch (SOAPException e) {
