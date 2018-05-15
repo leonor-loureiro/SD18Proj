@@ -2,8 +2,11 @@
 
 <handler-chains xmlns="http://java.sun.com/xml/ns/javaee">
     <handler-chain>
-  		<handler>
+        <handler>
             <handler-class>binas.ws.handler.PrettyLogHandler</handler-class>
+        </handler>
+        <handler>
+            <handler-class>binas.ws.handler.MACHandler</handler-class>
         </handler>
         <handler>
             <handler-class>binas.ws.handler.BinasServerHandler</handler-class>
