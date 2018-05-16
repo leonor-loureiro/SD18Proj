@@ -13,6 +13,10 @@ import org.junit.BeforeClass;
  * Loads the properties in the file
  */
 public class BaseIT {
+	protected final String VALID_EMAIL = "alice@T08.binas.org";
+	protected final String VALID_EMAIL_2 = "binas@T08.binas.org";
+	protected final String VALID_EMAIL_3 = "charlie@T08.binas.org";
+	protected final String VALID_EMAIL_4 = "eve@T08.binas.org";
 
 	private static final String TEST_PROP_FILE = "/test.properties";
 	protected static Properties testProps;
@@ -39,12 +43,14 @@ public class BaseIT {
 		final String wsName = testProps.getProperty("ws.name");
 		final String wsURL = testProps.getProperty("ws.url");
 
+
 		if ("true".equalsIgnoreCase(uddiEnabled)) {
 			client = new BinasClient(uddiURL, wsName);
 		} else {
 			client = new BinasClient(wsURL);
 		}
 		client.setVerbose("true".equalsIgnoreCase(verboseEnabled));
+
 
 	}
 

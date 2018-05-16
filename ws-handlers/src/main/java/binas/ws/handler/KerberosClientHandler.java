@@ -126,10 +126,10 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 			
 			NodeList email = bd.getElementsByTagName("email");
 				
-			if(email.getLength() == 0) {
-				System.out.println("No authentication necessary.");
-				return true;
-			}
+//			if(email.getLength() == 0) {
+//				System.out.println("No authentication necessary.");
+//				return true;
+//			}
 		}catch(SOAPException e) {
 			throw new RuntimeException("Error: Failed to get SOAP envolope.");
 		}

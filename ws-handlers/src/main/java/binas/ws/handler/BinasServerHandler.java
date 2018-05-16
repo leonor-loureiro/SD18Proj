@@ -12,6 +12,7 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
+import org.w3c.dom.NodeList;
 import pt.ulisboa.tecnico.sdis.kerby.*;
 
 import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
@@ -127,7 +128,7 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 			return true;
 		}
 
-		//	1.	Extrair o ticket e decifra-lo, obtendo a chave de sessão
+		// extract and decipher ticket - obtain session key
 		Ticket ticket;
 		try {
 			ticket = extractTicket(se, serverKey);
@@ -136,13 +137,13 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		Key sessionKey = ticket.getKeyXY();
 
 
-		//	2.	Verificar que o nome do servidor no ticket está correto
+		// verify server name
 		if( !servername.equals(ticket.getY()) ){
 			throw new RuntimeException("Servername does not match ticket servername");
 		}
 
 
-		//	3.	Extrair o autentificador e decifra-lo
+		// Extract and decipher Authentication
 		Auth auth;
 		try {
 			auth = extractAuth(se, sessionKey);
@@ -153,27 +154,58 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		}catch(KerbyException e) {throw new RuntimeException("unable to validate auth");}
 
 
-		//	4.	Verificar que o username no ticket coincide com o username no autentificador
+		// Verify auth username matches ticket username
 		if( !auth.getX().equals(ticket.getX()) ){
 			throw new RuntimeException("Authentication does not match ticket user");
 		}
 
 
-		//	5.	Guardar o request time para posteriormente incluir na mensagem de resposta
+		// Save reqTime and session key in context to be sent
 		Date reqTime =  auth.getTimeRequest();
 		smc.put(CONTEXT_REQ_TIME, reqTime);
 		smc.put(CONTEXT_LAST_SESSION, sessionKey);
 
+		if( !isReqTimeFresh(reqTime)){
+			throw new RuntimeException("Request Time is not fresh");
+		}
+
+		//user has permission for operation
+		if( !hasPermission(auth.getX(), msg)){
+			throw new RuntimeException("User " + auth.getX() + " has no permission for requested operation." );
+		}
 		return true;
 	}
 
-	private boolean needsAuthentication(SOAPMessage msg) {
-
+	private boolean hasPermission(String username, SOAPMessage msg) {
 		try {
-			return msg.getSOAPBody().getElementsByTagName(SOAP_EMAIL_TAG).getLength() > 0;
+
+			NodeList email = msg.getSOAPBody().getElementsByTagName(SOAP_EMAIL_TAG);
+
+			// if request has email
+			if(email.getLength() > 0) {
+				return username.equals(msg.getSOAPBody().getElementsByTagName(SOAP_EMAIL_TAG).item(0).getTextContent());
+			}
+
+			// if there's no email field, every user has permissions to access
+			return true;
+
 		} catch (SOAPException e) {
-			throw new RuntimeException("Can't find SoapMessage body while searching for email");
+			return false;
 		}
+	}
+
+	private boolean isReqTimeFresh(Date reqTime) {
+		Date current = new Date();
+		return current.getTime() - 500 < reqTime.getTime() && reqTime.getTime() < current.getTime() + 500;
+	}
+
+	private boolean needsAuthentication(SOAPMessage msg) {
+		return true;
+//		try {
+//			return msg.getSOAPBody().getElementsByTagName(SOAP_EMAIL_TAG).getLength() > 0;
+//		} catch (SOAPException e) {
+//			throw new RuntimeException("Can't find SoapMessage body while searching for email");
+//		}
 	}
 
 
