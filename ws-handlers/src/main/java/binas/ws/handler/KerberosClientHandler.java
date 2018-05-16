@@ -38,12 +38,11 @@ import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 
-	public static final String username = "alice@T08.binas.org";
-	public static final String userPassword = "WxzsYKnJn";
+	public static String username = "alice@T08.binas.org";
+	public static String userPassword = "WxzsYKnJn";
 	
-	public static final String servername = "binas@T08.binas.org";
-	public static final String serverPassword = "t5h9O9B2";
-	
+	public static String servername = "binas@T08.binas.org";
+
 	public static final String url = "http://sec.sd.rnl.tecnico.ulisboa.pt:8888/kerby";
 	public static final String uddiUrl = "http://localhost:9090";
 	public static final String name = "kerby";
@@ -268,8 +267,8 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	
 	/**
 	 * Return the request header element retrieved from the given envelope
-	 * @param SOAP envelope
-	 * @param header name
+	 * @param se SOAP envelope
+	 * @param localName header name
 	 * @param namespace
 	 * @return header element
 	 * @throws SOAPException
@@ -285,5 +284,19 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		}
 		return (SOAPElement) it.next();
 	}
+
+	public static void setUser(String user, String pass) {
+		if ( (user != null && !user.trim().isEmpty()) || (pass != null && !pass.trim().isEmpty())) {
+			username = user;
+			userPassword = pass;
+		}
+	}
+
+	public static void setServer(String server) {
+		if ( server != null && !server.trim().isEmpty() ) {
+			servername = server;
+		}
+	}
+
 
 }
