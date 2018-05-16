@@ -1,5 +1,8 @@
 package binas.ws.handler;
 
+import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+
 import java.security.Key;
 import java.util.Date;
 import java.util.Iterator;
@@ -8,7 +11,6 @@ import java.util.Set;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.Name;
-import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
@@ -20,8 +22,6 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
-import org.w3c.dom.NodeList;
-
 import pt.ulisboa.tecnico.sdis.kerby.Auth;
 import pt.ulisboa.tecnico.sdis.kerby.BadTicketRequest_Exception;
 import pt.ulisboa.tecnico.sdis.kerby.CipherClerk;
@@ -31,28 +31,28 @@ import pt.ulisboa.tecnico.sdis.kerby.RequestTime;
 import pt.ulisboa.tecnico.sdis.kerby.SecurityHelper;
 import pt.ulisboa.tecnico.sdis.kerby.SessionKey;
 import pt.ulisboa.tecnico.sdis.kerby.SessionKeyAndTicketView;
+import pt.ulisboa.tecnico.sdis.kerby.TicketCollection;
 import pt.ulisboa.tecnico.sdis.kerby.cli.KerbyClient;
-
-import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 
+	//USER INFO
 	public static String username = "alice@T08.binas.org";
 	public static String userPassword = "WxzsYKnJn";
-	
+
+	// SERVER INFO
 	public static String servername = "binas@T08.binas.org";
 
+
 	public static final String url = "http://sec.sd.rnl.tecnico.ulisboa.pt:8888/kerby";
-	public static final String uddiUrl = "http://localhost:9090";
 	public static final String name = "kerby";
 	
-	// Header names
+	// HEADERS
 	public static final String TICKET_HEADER = "ticketHeader";
 	public static final String AUTH_HEADER = "authHeader";
 	public static final String REQUEST_TIME_HEADER = "requestedTime";
 
-	// Namespace
+	// NAMESPACE
 	public static final String KERBY_NS = "urn:binas.client.kerby";
 	private static final String SERVER_NS = "urn:binas.server.authentication";
 	private static final String SOAP_PREFIX = "b";
@@ -60,6 +60,9 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	// CONTEXT
 	private static final String CONTEXT_REQ_TIME = "context_request_time";
 	private static final String CONTEXT_SESSION_KEY = "context_session_key";
+	
+	// COLLECTION OF VALID TICKETS
+	private static TicketCollection validTickets = new TicketCollection(500);
 	
 	/**
 	 * Called at the conclusion of a message exchange pattern just prior to the
@@ -112,29 +115,7 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	 * Handles outgoing request to Binas Server
 	 */
 	private boolean handleOutboundMessage(SOAPMessageContext smc) {
-		
-		SOAPEnvelope se = null;
-		SOAPHeader sh = null;
-		
-		try {
-			// get SOAP envelope
-			SOAPMessage msg = smc.getMessage();
-			SOAPPart sp = msg.getSOAPPart();
-			se = sp.getEnvelope();
-			sh = se.getHeader();
-			SOAPBody bd = se.getBody();
-			
-			NodeList email = bd.getElementsByTagName("email");
 				
-//			if(email.getLength() == 0) {
-//				System.out.println("No authentication necessary.");
-//				return true;
-//			}
-		}catch(SOAPException e) {
-			throw new RuntimeException("Error: Failed to get SOAP envolope.");
-		}
-		
-		
 		Key clientKey = null;
 		try {
 			clientKey = SecurityHelper.generateKeyFromPassword(userPassword);
@@ -143,23 +124,35 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 			throw new RuntimeException("Error: generation user key failed.");
 		}
 		
-		KerbyClient client = null;
-		try {
-			client = new KerbyClient(url);	
-		
-		}catch(Exception e) {
-			throw new RuntimeException("Error: creation of KerbyClient instance failed.");
+		SessionKeyAndTicketView result = validTickets.getTicket(servername);
+		if(result == null) {
+			System.out.println("New session requested");
+			KerbyClient client = null;
+			try {
+				client = new KerbyClient(url);	
+			
+			}catch(Exception e) {
+				throw new RuntimeException("Error: creation of KerbyClient instance failed.");
+			}
+			
+			// New session request
+			try {
+				result = client.requestTicket(username, servername,
+	        			new Random().nextLong(), 60 /* seconds */);
+				
+				validTickets.storeTicket(servername, result, System.currentTimeMillis() + 60000);
+			}catch (BadTicketRequest_Exception e1) {
+				throw new RuntimeException("Error: new session request failed.");
+			}
 		}
+		
 		
 		CipheredView cipheredSessionKey = null;
 		CipheredView cipheredTicket = null;
 		SessionKey sessionKey = null;
-
-		// New session request
+		
+		//Extract session key and ticket
 		try {
-			SessionKeyAndTicketView result = client.requestTicket(username, servername,
-			        			new Random().nextLong(), 60 /* seconds */);
-
 			cipheredSessionKey = result.getSessionKey(); 
 
 	        cipheredTicket = result.getTicket();
@@ -167,8 +160,6 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	        //Decipher session key
 	        sessionKey = new SessionKey(cipheredSessionKey, clientKey); 
 	        
-		} catch (BadTicketRequest_Exception e1) {
-			throw new RuntimeException("Error: new session request failed.");
 		} catch (KerbyException e) {
 			throw new RuntimeException("Error: sesssion key deciphering failed.");
 		}
@@ -186,6 +177,12 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		}
      
 		try {
+			// get SOAP envelope
+			SOAPMessage msg = smc.getMessage();
+			SOAPPart sp = msg.getSOAPPart();
+			SOAPEnvelope se = sp.getEnvelope();
+			SOAPHeader sh = se.getHeader();
+			
 			//Create new header with ticket
 			Name ticketHeaderName = se.createName(TICKET_HEADER, SOAP_PREFIX, KERBY_NS);
 			SOAPHeaderElement ticketHeader = sh.addHeaderElement(ticketHeaderName);
@@ -285,6 +282,11 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		return (SOAPElement) it.next();
 	}
 
+	/**
+	 * Set the user info
+	 * @param user
+	 * @param pass
+	 */
 	public static void setUser(String user, String pass) {
 		if ( (user != null && !user.trim().isEmpty()) || (pass != null && !pass.trim().isEmpty())) {
 			username = user;
@@ -292,6 +294,10 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		}
 	}
 
+	/**
+	 * Set server info
+	 * @param server
+	 */
 	public static void setServer(String server) {
 		if ( server != null && !server.trim().isEmpty() ) {
 			servername = server;

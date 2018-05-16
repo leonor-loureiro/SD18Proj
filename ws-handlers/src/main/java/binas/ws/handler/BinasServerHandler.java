@@ -26,7 +26,6 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 	private static final String serverPassword = "t5h9O9B2";
 
 	private static final String url = "http://sec.sd.rnl.tecnico.ulisboa.pt:8888/kerby";
-	private static final String uddiUrl = "http://localhost:9090";
 	private static final String name = "kerby";
 
 	// Header names
@@ -141,8 +140,13 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		if( !servername.equals(ticket.getY()) ){
 			throw new RuntimeException("Servername does not match ticket servername");
 		}
-
-
+		
+		// Verify validity of ticket
+		long currentTime = new Date().getTime();
+		if(currentTime < ticket.getTime1().getTime() && currentTime > ticket.getTime2().getTime()){
+			throw new RuntimeException("Ticket expired");
+		}
+		
 		// Extract and decipher Authentication
 		Auth auth;
 		try {
