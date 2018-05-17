@@ -142,7 +142,6 @@ public class BinasClientApp {
 	        	System.out.println(e.getMessage() + "\n");
 	        }
 	        
-	        
 	        try {
 	        	client.rentBina(stationID, username2);     	
 	        }catch(ServerSOAPFaultException e) {
