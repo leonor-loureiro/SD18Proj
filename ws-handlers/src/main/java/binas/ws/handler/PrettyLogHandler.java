@@ -33,6 +33,12 @@ public class PrettyLogHandler implements SOAPHandler<SOAPMessageContext> {
 	private static final String XML_INDENT_AMOUNT_PROPERTY = "{http://xml.apache.org/xslt}indent-amount";
 	/** XML indentation amount to use (default=0). */
 	private static final Integer XML_INDENT_AMOUNT_VALUE = 2;
+	
+	private static boolean showLog = true;
+	
+	public static void setShowLog(boolean show) {
+		showLog = show;
+	}
 
 	//
 	// Handler interface implementation
@@ -53,14 +59,16 @@ public class PrettyLogHandler implements SOAPHandler<SOAPMessageContext> {
 	 */
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
-		logSOAPMessage(smc, System.out);
+		if(showLog) 
+			logSOAPMessage(smc, System.out);
 		return true;
 	}
 
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		logSOAPMessage(smc, System.out);
+		if(showLog)
+			logSOAPMessage(smc, System.out);
 		return true;
 	}
 

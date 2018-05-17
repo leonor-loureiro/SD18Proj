@@ -13,9 +13,8 @@ import org.junit.Test;
  * Test suite
  */
 public class AuxOperationsIT extends BaseIT {
-	private String email1 = "notAdmin@test";
-	private String email2 = "test@notAdmin";
-	private int initialCredits = 10;
+	private String email = VALID_EMAIL;
+	private int initialCredits = 23;
 	private int noInitialCredits = 0;
 	private String stationId1 = "T08_Station1";
 	private int x1 = 22, y1 = 7, capacity1 = 6, reward1 = 2;
@@ -32,12 +31,11 @@ public class AuxOperationsIT extends BaseIT {
 	@Test
 	public void userCreditsInitialization() throws Exception {
 		client.testInit(initialCredits);
-		client.activateUser(email1);
-		
-		client.testInit(initialCredits + 5);
-		client.activateUser(email2);
-		Assert.assertEquals(initialCredits, client.getCredit(email1));
-		Assert.assertEquals(initialCredits + 5, client.getCredit(email2));
+		client.activateUser(email);
+
+//		client.activateUser(email2);
+		Assert.assertEquals(initialCredits, client.getCredit(email));
+//		Assert.assertEquals(initialCredits + 5, client.getCredit(email2));
 	}
 	
 	@Test
@@ -59,13 +57,13 @@ public class AuxOperationsIT extends BaseIT {
 	public void infoClearing() throws Exception {
 		client.testInit(initialCredits);
 		client.testInitStation(stationId1, x1, y1, capacity1, reward1);
-		client.activateUser(email1);
+		client.activateUser(email);
 		
 		client.testClear();
 		
 		client.testInit(initialCredits);
 		client.testInitStation(stationId1, x1, y1, capacity1, reward1);
-		client.activateUser(email1);
+		client.activateUser(email);
 	}
 
 	@After

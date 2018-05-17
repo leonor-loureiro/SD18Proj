@@ -1,70 +1,106 @@
 package binas.ws.handler;
 
 
-import java.util.*;
+import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 import java.security.Key;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.*;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
-import pt.ulisboa.tecnico.sdis.kerby.*;
+import pt.ulisboa.tecnico.sdis.kerby.Auth;
+import pt.ulisboa.tecnico.sdis.kerby.CipherClerk;
+import pt.ulisboa.tecnico.sdis.kerby.CipheredView;
+import pt.ulisboa.tecnico.sdis.kerby.KerbyException;
+import pt.ulisboa.tecnico.sdis.kerby.RequestTime;
+import pt.ulisboa.tecnico.sdis.kerby.SecurityHelper;
+import pt.ulisboa.tecnico.sdis.kerby.Ticket;
 
-import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
-
+/**
+ * Checks the validity of the ticket and the identity of the client
+ */
 public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
+	
+	//SERVER INFO
+	private static  String servername = "binas@T08.binas.org";
+	private static String serverPassword = "t5h9O9B2";
 
-	private final static int VALID_DURATION = 30;
-
-	private static final String servername = "binas@T08.binas.org";
-	private static final String serverPassword = "t5h9O9B2";
-
-	private static final String url = "http://sec.sd.rnl.tecnico.ulisboa.pt:8888/kerby";
-	private static final String uddiUrl = "http://localhost:9090";
-	private static final String name = "kerby";
-
-	// Header names
+	// HEADER NAMES
 	private static final String TICKET_HEADER = "ticketHeader";
 	private static final String AUTH_HEADER = "authHeader";
+	private static final String REQUEST_TIME_HEADER = "requestedTime";
 
-	// Namespace
-	private static final String KERBY_NS = "urn:binas.client.kerby";
-	private static final String SERVER_NS = "urn:binas.server.authentication";
-
-
+	// NAMESPACE
+	public static final String BINAS_NS = "urn:binas.authentication";
 	private static final String SOAP_PREFIX = "b";
-	private static final String SOAP_EMAIL_TAG = "email";
-
-	private static final String REQ_TIME_HEADER = "requestedTime";
+	
 
 	// CONTEXT
 	private static final String CONTEXT_REQ_TIME = "context_time";
 	private static final String CONTEXT_LAST_SESSION = "context_session_key";
+	private static final String CONTEXT_USERNAME = "context_username";
 
+
+	/**
+	 * Set the server info
+	 * @param name
+	 * @param pass
+	 */
+	public static void setServer(String name, String pass) {
+		if ( (name != null && !name.trim().isEmpty()) || (pass != null && !pass.trim().isEmpty())) {
+			servername = name;
+			serverPassword = pass;
+		}
+	}
+	
+	/**
+	 * Called at the conclusion of a message exchange pattern just prior to the
+	 * JAX-WS runtime dispatching a message, fault or exception.
+	 */
 	@Override
-	public void close(MessageContext arg0) {
-		// TODO Auto-generated method stub
+	public void close(MessageContext smc) {
+		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+				
+		if(outbound) {
+			smc.put(CONTEXT_REQ_TIME, null);
+			smc.put(CONTEXT_LAST_SESSION, null);
+		}
 
 	}
-
+	
+	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext arg0) {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
+	/**
+	 * Gets the header blocks that can be processed by this Handler instance. If
+	 * null, processes all.
+	 */
 	@Override
 	public Set<QName> getHeaders() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-
+	/**
+	 * The handleMessage method is invoked for normal processing of inbound and
+	 * outbound messages.
+	 */
 	@Override
 	public boolean handleMessage(SOAPMessageContext arg0) {
 		Boolean outbound = (Boolean) arg0.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
@@ -75,6 +111,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		}
 	}
 
+	/**
+	 * Handles outbound messages
+	 */
 	private boolean handleOutboundMessage(SOAPMessageContext smc) {
 		Date reqTime = (Date) smc.get(CONTEXT_REQ_TIME);
 		Key lastSessionKey = (Key) smc.get(CONTEXT_LAST_SESSION);
@@ -86,21 +125,16 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 				SOAPMessage msg = smc.getMessage();
 				SOAPPart sp = msg.getSOAPPart();
 				SOAPEnvelope se = sp.getEnvelope();
-
-				// add header
 				SOAPHeader sh = se.getHeader();
+
+				// Add header if none exists
 				if (sh == null)
 					sh = se.addHeader();
 
 				CipheredView cipheredReqTime = new RequestTime(reqTime).cipher(lastSessionKey);
 
-				// add header element (name, namespace prefix, namespace)
-				Name name = se.createName(REQ_TIME_HEADER, SOAP_PREFIX, SERVER_NS);
-				SOAPHeaderElement reqTimeHeader = sh.addHeaderElement(name);
-				
-				String reqTimeString = printBase64Binary(cipheredReqTime.getData());
-				reqTimeHeader.addTextNode(reqTimeString);
-
+				// Add new header with request time
+				appendHeader(cipheredReqTime, REQUEST_TIME_HEADER, se, sh);
 			}
 		} catch (SOAPException e) {
 			throw new RuntimeException("error handling header in outbound");
@@ -111,6 +145,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		return true;
 	}
 
+	/**
+	 * Handles inbound messages
+	 */
 	private boolean handleInboundMessage(SOAPMessageContext smc) {
 		Key serverKey = getServerKey();
 
@@ -123,11 +160,8 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 			se = sp.getEnvelope();
 		} catch (SOAPException e) { throw new RuntimeException("Error opening SOAP envelope"); }
 
-		if( !needsAuthentication(msg) ){
-			return true;
-		}
-
-		//	1.	Extrair o ticket e decifra-lo, obtendo a chave de sessão
+	
+		// extract and decipher ticket - obtain session key
 		Ticket ticket;
 		try {
 			ticket = extractTicket(se, serverKey);
@@ -136,13 +170,18 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		Key sessionKey = ticket.getKeyXY();
 
 
-		//	2.	Verificar que o nome do servidor no ticket está correto
+		// verify server name
 		if( !servername.equals(ticket.getY()) ){
 			throw new RuntimeException("Servername does not match ticket servername");
 		}
-
-
-		//	3.	Extrair o autentificador e decifra-lo
+		
+		// Verify validity of ticket
+		long currentTime = new Date().getTime();
+		if(currentTime < ticket.getTime1().getTime() && currentTime > ticket.getTime2().getTime()){
+			throw new RuntimeException("Ticket expired");
+		}
+		
+		// Extract and decipher Authentication
 		Auth auth;
 		try {
 			auth = extractAuth(se, sessionKey);
@@ -153,43 +192,25 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		}catch(KerbyException e) {throw new RuntimeException("unable to validate auth");}
 
 
-		//	4.	Verificar que o username no ticket coincide com o username no autentificador
+		// Verify auth username matches ticket username
 		if( !auth.getX().equals(ticket.getX()) ){
 			throw new RuntimeException("Authentication does not match ticket user");
 		}
 
 
-		//	5.	Guardar o request time para posteriormente incluir na mensagem de resposta
+		// Save reqTime and session key in context to be sent
 		Date reqTime =  auth.getTimeRequest();
 		smc.put(CONTEXT_REQ_TIME, reqTime);
 		smc.put(CONTEXT_LAST_SESSION, sessionKey);
+		smc.put(CONTEXT_USERNAME, auth.getX());
 
 		return true;
 	}
 
-	private boolean needsAuthentication(SOAPMessage msg) {
 
-		try {
-			return msg.getSOAPBody().getElementsByTagName(SOAP_EMAIL_TAG).getLength() > 0;
-		} catch (SOAPException e) {
-			throw new RuntimeException("Can't find SoapMessage body while searching for email");
-		}
-	}
-
-
-	private SOAPElement getHeaderElementByName(SOAPEnvelope se, String localName) throws SOAPException {
-		Name name = se.createName(localName, BinasServerHandler.SOAP_PREFIX, BinasServerHandler.KERBY_NS);
-		Iterator<?> it = se.getHeader().getChildElements(name);
-
-		// check header element
-		if (!it.hasNext()) {
-			System.out.println("Header element not found.");
-			return null;
-		}
-		return (SOAPElement) it.next();
-	}
-
-
+	/**
+	 * Generates the server key from the servers password
+	 */
 	private Key getServerKey(){
 		try {
 			return SecurityHelper.generateKeyFromPassword(serverPassword);
@@ -199,6 +220,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		}
 	}
 
+	/**
+	 * Extracts the ticket from the given header and deciphers it
+	 */
 	private Ticket extractTicket(SOAPEnvelope se, Key serverKey) throws KerbyException {
 		CipheredView cipheredTicket;
 		try {
@@ -209,6 +233,9 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 		return new Ticket(cipheredTicket, serverKey);
 	}
 
+	/**
+	 * Extracts the authenticator from the given header and deciphers it
+	 */
 	private Auth extractAuth(SOAPEnvelope se, Key sessionKey) throws KerbyException {
 		CipheredView cipheredAuth;
 		try {
@@ -218,4 +245,44 @@ public class BinasServerHandler implements SOAPHandler<SOAPMessageContext> {
 
 		return new Auth(cipheredAuth, sessionKey);
 	}
+	
+	/**
+	 * Creates a new header with the given element and name
+	 * @param cipheredElem element to include
+	 * @param localname header name
+	 * @param se SOAP envelope
+	 * @param sh SOAP header
+	 */
+	private void appendHeader(CipheredView cipheredElem, String localname, SOAPEnvelope se, SOAPHeader sh) {
+		try {
+			Name headerName = se.createName(localname, SOAP_PREFIX, BINAS_NS);
+			SOAPHeaderElement header = sh.addHeaderElement(headerName);
+			
+			String cipheredElemString = printBase64Binary(cipheredElem.getData());
+			header.addTextNode(cipheredElemString);	
+			
+		}catch(SOAPException e) {
+			throw new RuntimeException("Error: failed to include header " + localname);
+		}
+	}
+	
+	/**
+	 * Retrieves the header with the given name
+	 * @param se SOAP Envelop
+	 * @param localName header name
+	 * @return corresponding header 
+	 * @throws SOAPException
+	 */
+	private SOAPElement getHeaderElementByName(SOAPEnvelope se, String localName) throws SOAPException {
+		Name name = se.createName(localName, SOAP_PREFIX, BINAS_NS);
+		Iterator<?> it = se.getHeader().getChildElements(name);
+
+		// check header element
+		if (!it.hasNext()) {
+			System.out.println("Header element not found.");
+			return null;
+		}
+		return (SOAPElement) it.next();
+	}
 }
+

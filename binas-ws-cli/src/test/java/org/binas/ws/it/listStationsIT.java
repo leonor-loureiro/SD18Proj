@@ -12,8 +12,7 @@ import java.util.List;
  * Test suite
  */
 public class listStationsIT extends BaseIT{
-    private String email1 = "notAdmin@test";
-    private String email2 = "test@notAdmin";
+    private String email = VALID_EMAIL;
     private String stationId1 = "T08_Station1";
     private String stationId2 = "T08_Station2";
     private String stationId3 = "T08_Station3";
@@ -29,7 +28,7 @@ public class listStationsIT extends BaseIT{
         client.testInitStation(stationId1, x1, y1, capacity1, reward1);
         client.testInitStation(stationId2, x2, y2, capacity2, reward2);
         client.testInitStation(stationId3, x3, y3, capacity3, reward3);
-        client.activateUser(email1);
+        client.activateUser(email);
     }
 
     @Test

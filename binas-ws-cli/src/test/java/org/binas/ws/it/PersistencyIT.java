@@ -14,7 +14,7 @@ import org.junit.Test;
 public class PersistencyIT extends BaseIT {
 	
 	/* Test email format */
-    private String email = "username@domain";
+    private String email = VALID_EMAIL;
     private String stationId1 = "T08_Station1";
 
     /**

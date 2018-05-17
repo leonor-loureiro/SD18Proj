@@ -37,65 +37,65 @@ public class FullIT extends BaseIT {
 	}
 	
 
-	@Test
-	public void fullSuccess() throws Exception {
-		
-		int i = 0;
-		
-		client.testInit(initialCredits);
-    	client.testInitStation(stationId1, x1, y1, capacity1, reward1);	
-    	client.testInitStation(stationId2, x2, y2, capacity2, reward2);
-    	client.testInitStation(stationId3, x3, y3, capacity3, reward3);
-    	
-    	for (i = 0; i < allCapacity; i++) {
-    		client.activateUser(i + mail);    		
-    	}
-    	
-		
-		for(i = 0; i < allCapacity; i++) {
-			if(client.getInfoStation(stationId1).getAvailableBinas() > 0)
-				client.rentBina(stationId1, i + mail);
-			
-			else if(client.getInfoStation(stationId2).getAvailableBinas() > 0)
-				client.rentBina(stationId2, i + mail);
-			
-			else if(client.getInfoStation(stationId3).getAvailableBinas() > 0)
-				client.rentBina(stationId3, i + mail);
-			
-			else Assert.fail(); // if all capacity wasn't reached but no binas are available
-		}
-		
-		Assert.assertEquals(capacity1, client.getInfoStation(stationId1).getTotalGets());
-		Assert.assertEquals(capacity2, client.getInfoStation(stationId2).getTotalGets());
-		Assert.assertEquals(capacity3, client.getInfoStation(stationId3).getTotalGets());
-		
-		
-		CoordinatesView coord = new CoordinatesView();
-		coord.setX(x3); 
-		coord.setY(y3);
-		List<StationView> stations = client.listStations(new Integer(7), coord);
-		Assert.assertEquals(stationId3, stations.get(0).getId() );
-		
-		for(i = 0; i < allCapacity; i++) {
-			if(client.getInfoStation(stationId3).getFreeDocks() > 0)
-				client.returnBina(stationId3, i + mail);
-			
-			else if(client.getInfoStation(stationId2).getFreeDocks() > 0)
-				client.returnBina(stationId2, i + mail);
-			
-			else if(client.getInfoStation(stationId1).getFreeDocks() > 0)
-				client.returnBina(stationId1, i + mail);
-			
-			else Assert.fail(); // if all capacity wasn't reached but no binas are available
-		}
-		Assert.assertEquals(capacity3, client.getInfoStation(stationId3).getTotalReturns());
-		Assert.assertEquals(capacity2, client.getInfoStation(stationId2).getTotalReturns());
-		Assert.assertEquals(capacity1, client.getInfoStation(stationId1).getTotalReturns());
-		
-		
-		
-	}
-    
+//	@Test
+//	public void fullSuccess() throws Exception {
+//
+//		int i = 0;
+//
+//		client.testInit(initialCredits);
+//    	client.testInitStation(stationId1, x1, y1, capacity1, reward1);
+//    	client.testInitStation(stationId2, x2, y2, capacity2, reward2);
+//    	client.testInitStation(stationId3, x3, y3, capacity3, reward3);
+//
+//    	for (i = 0; i < allCapacity; i++) {
+//    		client.activateUser(i + mail);
+//    	}
+//
+//
+//		for(i = 0; i < allCapacity; i++) {
+//			if(client.getInfoStation(stationId1).getAvailableBinas() > 0)
+//				client.rentBina(stationId1, i + mail);
+//
+//			else if(client.getInfoStation(stationId2).getAvailableBinas() > 0)
+//				client.rentBina(stationId2, i + mail);
+//
+//			else if(client.getInfoStation(stationId3).getAvailableBinas() > 0)
+//				client.rentBina(stationId3, i + mail);
+//
+//			else Assert.fail(); // if all capacity wasn't reached but no binas are available
+//		}
+//
+//		Assert.assertEquals(capacity1, client.getInfoStation(stationId1).getTotalGets());
+//		Assert.assertEquals(capacity2, client.getInfoStation(stationId2).getTotalGets());
+//		Assert.assertEquals(capacity3, client.getInfoStation(stationId3).getTotalGets());
+//
+//
+//		CoordinatesView coord = new CoordinatesView();
+//		coord.setX(x3);
+//		coord.setY(y3);
+//		List<StationView> stations = client.listStations(new Integer(7), coord);
+//		Assert.assertEquals(stationId3, stations.get(0).getId() );
+//
+//		for(i = 0; i < allCapacity; i++) {
+//			if(client.getInfoStation(stationId3).getFreeDocks() > 0)
+//				client.returnBina(stationId3, i + mail);
+//
+//			else if(client.getInfoStation(stationId2).getFreeDocks() > 0)
+//				client.returnBina(stationId2, i + mail);
+//
+//			else if(client.getInfoStation(stationId1).getFreeDocks() > 0)
+//				client.returnBina(stationId1, i + mail);
+//
+//			else Assert.fail(); // if all capacity wasn't reached but no binas are available
+//		}
+//		Assert.assertEquals(capacity3, client.getInfoStation(stationId3).getTotalReturns());
+//		Assert.assertEquals(capacity2, client.getInfoStation(stationId2).getTotalReturns());
+//		Assert.assertEquals(capacity1, client.getInfoStation(stationId1).getTotalReturns());
+//
+//
+//
+//	}
+//
     @After
     public void tearDown() {
     	client.testClear();
