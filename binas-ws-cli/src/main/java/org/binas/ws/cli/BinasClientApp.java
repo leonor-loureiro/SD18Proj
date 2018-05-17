@@ -1,8 +1,13 @@
 package org.binas.ws.cli;
 
-import org.binas.ws.EmailExists_Exception;
-import org.binas.ws.UserNotExists_Exception;
 import org.binas.ws.UserView;
+
+import com.sun.xml.ws.fault.ServerSOAPFaultException;
+
+import binas.ws.handler.BinasServerHandler;
+import binas.ws.handler.KerberosClientHandler;
+import binas.ws.handler.MACHandler;
+import binas.ws.handler.PrettyLogHandler;
 
 public class BinasClientApp {
 
@@ -17,13 +22,16 @@ public class BinasClientApp {
         String uddiURL = null;
         String wsName = null;
         String wsURL = null;
-        if (args.length == 1) {
-            wsURL = args[0];
-        } else if (args.length >= 2) {
-            uddiURL = args[0];
-            wsName = args[1];
-        }
-
+        String fase = null;
+      
+        uddiURL = args[0];
+        wsName = args[1];
+        fase = args[2];
+        
+        if(args[3].equals("no"))
+        	PrettyLogHandler.setShowLog(false);
+        
+        
 		System.out.println(BinasClientApp.class.getSimpleName() + " running");
 
         // Create client
@@ -39,57 +47,114 @@ public class BinasClientApp {
         }
 
 
-		 /***********************************
-		    Fault Tolerance Demonstration
-		    
-		     F1 - Normal function
-		     F2 - Fault tolerance
-		  **********************************/
+        
+        /*******************************
+	    	Security Demonstration
+	    
+	     	F1 - Normal function
+	     	F2 - Resistance to attack
+	  **********************************/
+        
+        final String stationID = "T08_Station1";
+        
+        // Users login info
+    	final String username1 = "alice@T08.binas.org";
+    	final String user1Password = "WxzsYKnJn";
+    	
+    	final String username2 = "charlie@T08.binas.org";
+    	
+    	// Server login info
+    	final String servername = "binas@T08.binas.org";
+    	final String serverPassword = "t5h9O9B2";
+    	
+    	// Set user, server and attackMode
+    	KerberosClientHandler.setUser(username1, user1Password);
+    	KerberosClientHandler.setServer(servername);
+    	BinasServerHandler.setServer(servername, serverPassword);
+    	
+    	if(fase.equals("F1")) {
+    		
+	    	KerberosClientHandler.setAttackMode(KerberosClientHandler.NO_ATTACK);
+	    	MACHandler.setAttackMode(MACHandler.NO_ATTACK);
+	    	
+	    	// Set new users initial credit
+	    	 client.testInit(20);
+	    	
+	    	// Activate user 
+	    	UserView user = client.activateUser("alice@T08.binas.org");
+	        System.out.println("User " + user.getEmail() + " sucessfully created.\n\n");
+	        
+	        // Alter user state
+	        client.rentBina(stationID, username1);
+	        System.out.println("Bina rented from " + stationID + "\n\n");
+	        
+	        // Protected read
+	        int credit = client.getCredit(username1);
+	        System.out.println("User " + user.getEmail() + " with credit " + credit+ "\n\n");
+	
+	        
+	        // Operation that does not alter the state of any user
+	        String pingResult = client.testPing("Hello friend!");
+	        System.out.println(pingResult);
+    	}
+        
+    	else {
+    		
+	        /**
+	         * REPLAY ATTACK
+	         */
+	        System.out.println("\n====================  REPLAY ATTACK  ======================\n");
+	        KerberosClientHandler.setAttackMode(KerberosClientHandler.REPLAY_ATTACK);
+	        try {
+	        	client.getCredit(username1);     	
+	        }catch(ServerSOAPFaultException e) {
+	        	System.out.println("\nReplay attack prevented.\n");
+	        	System.out.println(e.getMessage() + "\n");
+	        }
+	        
+	        /**
+	         * INTEGRITY ATTACK 
+	         */
+	        
+	        System.out.println("\n====================  INTEGRITY ATTACK ======================\n");
+	        KerberosClientHandler.setAttackMode(KerberosClientHandler.NO_ATTACK);
+	        MACHandler.setAttackMode(MACHandler.CORRUPT_CONTENT);
+	        
+	        try {
+	        	client.getCredit(username1);     	
+	        }catch(ServerSOAPFaultException e) {
+	        	System.out.println("\nIntegrity attack prevented.\n");
+	        	System.out.println(e.getMessage() + "\n");
+	        }
+	        
+	        /**
+	         * USER WITHOUT PERMISSIONS FOR THE OPERATION
+	         */
+	        
+	        System.out.println("\n====================  USER WITHOUT PERMISSIONS FOR THE OPERATION ======================\n");
+	        KerberosClientHandler.setAttackMode(KerberosClientHandler.NO_ATTACK);
+	        MACHandler.setAttackMode(MACHandler.NO_ATTACK);
+	        
+	        try {
+	        	client.getCredit(username2);     	
+	        }catch(ServerSOAPFaultException e) {
+	        	System.out.println("\nUser stoped from reading info of another user.\n");
+	        	System.out.println(e.getMessage() + "\n");
+	        }
+	        
+	        
+	        try {
+	        	client.rentBina(stationID, username2);     	
+	        }catch(ServerSOAPFaultException e) {
+	        	System.out.println("\nUser stoped from altering state of another user.\n");
+	        	System.out.println(e.getMessage() + "\n");
+	        }
+    	}
         
         
-//		 String email = "username@domain";
-//		 String stationID = "T08_Station1";
-//		 int bonus = 5;
-//		 
-//		 client.testInitStation(stationID, 20, 40, 10, bonus);
-//		 System.out.println(stationID + " initiallized with bonus " + bonus);
-//		 
-//		 
-//		 /**
-//		  * F1 - Creates user successfully
-//		  * 
-//		  * F2 - First execution: Creates user successfully
-//		  *    - Second execution: User already exists (in remote replica manager)
-//		  */
-//		 try {
-//			 client.testInit(20);
-//			 
-//			 UserView user = client.activateUser(email);
-//			 System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
-//			 
-//		 }catch(EmailExists_Exception eee) {
-//			 System.out.println("Already exists user " + email + " with credit: " + client.getCredit(email));
-//		 }
-//		 
-//		 
-//		 client.rentBina(stationID, email);
-//		 System.out.println("Bina rented from " + stationID);
-//		 
-//		 client.returnBina(stationID, email);
-//		 System.out.println("Bina returned to " + stationID);
-//		 
-//		 
-//		 System.out.println("User " + email + " current credit is " + client.getCredit(email));
-//		 
+    	
         
-        String pingResult = client.testPing("Hello friend!");
-        System.out.println(pingResult);
-		 
-        UserView user = client.activateUser("alice@T08.binas.org");
-        System.out.println("User " + user.getEmail() + " sucessfully created with initial credit: " + user.getCredit());
-        
-		
-		 
+    	
 	 }
 }
 

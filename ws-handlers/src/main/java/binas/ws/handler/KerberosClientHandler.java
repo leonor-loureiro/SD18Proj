@@ -53,8 +53,7 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	public static final String REQUEST_TIME_HEADER = "requestedTime";
 
 	// NAMESPACE
-	public static final String KERBY_NS = "urn:binas.client.kerby";
-	private static final String SERVER_NS = "urn:binas.server.authentication";
+	public static final String BINAS_NS = "urn:binas.authentication";
 	private static final String SOAP_PREFIX = "b";
 	
 	// CONTEXT
@@ -63,6 +62,39 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	
 	// COLLECTION OF VALID TICKETS
 	private static TicketCollection validTickets = new TicketCollection(500);
+	
+	// ATTACK MODES FOR SECURITY DEMOSTRATION
+	public static final int NO_ATTACK = 0;
+	public static final int REPLAY_ATTACK = 2;	
+	private static int attackMode = NO_ATTACK;
+	
+	/**
+ 	 * Set attack mode for security demonstration
+ 	 */
+ 	public static void setAttackMode(int mode) {
+ 		attackMode = mode;
+ 	}
+	
+	/**
+	 * Set the user info
+	 * @param user
+	 * @param pass
+	 */
+	public static void setUser(String user, String pass) {
+		if ( (user != null && !user.trim().isEmpty()) || (pass != null && !pass.trim().isEmpty())) {
+			username = user;
+			userPassword = pass;
+		}
+	}
+
+	/**
+	 * Set server info
+	 * @param server
+	 */
+	public static void setServer(String server) {
+		if ( server != null && !server.trim().isEmpty() )
+			servername = server;
+	}
 	
 	/**
 	 * Called at the conclusion of a message exchange pattern just prior to the
@@ -93,12 +125,10 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		
-		if(outbound) {
+		if(outbound) 
 			return handleOutboundMessage(smc);
-		}
-		else {
+		else 
 			return handleInboundMessage(smc);
-		}
 	}
 
 	/**
@@ -112,7 +142,7 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	}
 	
 	/**
-	 * Handles outgoing request to Binas Server
+	 * Handles outgoing request to the Server
 	 */
 	private boolean handleOutboundMessage(SOAPMessageContext smc) {
 				
@@ -124,28 +154,13 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 			throw new RuntimeException("Error: generation user key failed.");
 		}
 		
+		// Get a valid ticket and session key
 		SessionKeyAndTicketView result = validTickets.getTicket(servername);
-		if(result == null) {
-			System.out.println("New session requested");
-			KerbyClient client = null;
-			try {
-				client = new KerbyClient(url);	
-			
-			}catch(Exception e) {
-				throw new RuntimeException("Error: creation of KerbyClient instance failed.");
-			}
-			
-			// New session request
-			try {
-				result = client.requestTicket(username, servername,
-	        			new Random().nextLong(), 60 /* seconds */);
-				
-				validTickets.storeTicket(servername, result, System.currentTimeMillis() + 60000);
-			}catch (BadTicketRequest_Exception e1) {
-				throw new RuntimeException("Error: new session request failed.");
-			}
-		}
 		
+		if(result == null) { 
+			// Request new session
+			result = newSessionRequest();
+		}
 		
 		CipheredView cipheredSessionKey = null;
 		CipheredView cipheredTicket = null;
@@ -165,62 +180,46 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		}
 		
 		// Generate new authenticator
-		Date requestTime = new Date();
-        Auth auth = new Auth(username, requestTime);
-        
-        CipheredView cipheredAuth = null;
-        // Encrypt authenticator
-        try {
-			cipheredAuth = auth.cipher(sessionKey.getKeyXY());
-		} catch (KerbyException e1) {
-			throw new RuntimeException("Error: authenticator encryption failed.");
-		}
-     
+		CipheredView cipheredAuth = generateAuth(sessionKey,smc);
+		
+		
 		try {
-			// get SOAP envelope
+			// Get SOAP envelope
 			SOAPMessage msg = smc.getMessage();
 			SOAPPart sp = msg.getSOAPPart();
 			SOAPEnvelope se = sp.getEnvelope();
 			SOAPHeader sh = se.getHeader();
 			
+			// Add header if none exists
+			if (sh == null)
+				sh = se.addHeader();
+		
 			//Create new header with ticket
-			Name ticketHeaderName = se.createName(TICKET_HEADER, SOAP_PREFIX, KERBY_NS);
-			SOAPHeaderElement ticketHeader = sh.addHeaderElement(ticketHeaderName);
-			
-			String ticketString = printBase64Binary(cipheredTicket.getData());
-			ticketHeader.addTextNode(ticketString);
-			
+			appendHeader(cipheredTicket, TICKET_HEADER, se, sh);
+
 			//Create new header with authenticator
-			Name authHeaderName = se.createName(AUTH_HEADER, SOAP_PREFIX, KERBY_NS);
-			SOAPHeaderElement authHeader = sh.addHeaderElement(authHeaderName);
+			appendHeader(cipheredAuth, AUTH_HEADER, se, sh);
 			
-			String authString = printBase64Binary(cipheredAuth.getData());
-			authHeader.addTextNode(authString);			
 		}catch (SOAPException e) {
-			System.out.printf("Failed to add SOAP header because of %s%n", e);
-			throw new RuntimeException("Error: Failed to add SOAP header.");
+			throw new RuntimeException("Error: Failed to get SOAP envelope.");
 		}
 		
-		//Add session key and requestTime to context to latter handle inbound msg
-		smc.put(CONTEXT_REQ_TIME, requestTime);
+		//Add session key to context to latter handle inbound msg
 		smc.put(CONTEXT_SESSION_KEY, sessionKey.getKeyXY());
 				
 		return true;
 	}
+
 	
 	/**
-	 * Handles incoming messages from Binas Server 
+	 * Handles incoming messages from Server 
 	 */
-	public boolean handleInboundMessage(SOAPMessageContext smc) {
+	private boolean handleInboundMessage(SOAPMessageContext smc) {
 		
 		//Get session key an request time of corresponding request message
 		Date requestTime = (Date) smc.get(CONTEXT_REQ_TIME);
 		Key sessionKey = (Key) smc.get(CONTEXT_SESSION_KEY);
 		
-		if(requestTime == null && sessionKey == null) {
-			System.out.println("No authentication necessary");
-			return true;
-		}
 				
 		try {
 			// get SOAP envelope header
@@ -235,7 +234,7 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 			}	
 			
 			//Extract request time from header
-			String requestTimeStr = getHeaderElementByName(se, REQUEST_TIME_HEADER, SERVER_NS).getValue();
+			String requestTimeStr = getHeaderElementByName(se, REQUEST_TIME_HEADER, BINAS_NS).getValue();
 			byte[] requestTimeBytes = parseBase64Binary(requestTimeStr);
 			
 	
@@ -262,6 +261,10 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	}
 	
 	
+	/* =============== *
+	  		AUX 
+	 *  ============== */
+
 	/**
 	 * Return the request header element retrieved from the given envelope
 	 * @param se SOAP envelope
@@ -282,27 +285,83 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		return (SOAPElement) it.next();
 	}
 
+	
 	/**
-	 * Set the user info
-	 * @param user
-	 * @param pass
+	 * Request a new session
+	 * @return ticket and session key
 	 */
-	public static void setUser(String user, String pass) {
-		if ( (user != null && !user.trim().isEmpty()) || (pass != null && !pass.trim().isEmpty())) {
-			username = user;
-			userPassword = pass;
+	private SessionKeyAndTicketView newSessionRequest() {
+		System.out.println("Request new session.....");
+		
+		KerbyClient client = null;
+		try {
+			client = new KerbyClient(url);	
+		
+		}catch(Exception e) {
+			throw new RuntimeException("Error: creation of KerbyClient instance failed.");
+		}
+		
+		// New session request
+		try {
+			SessionKeyAndTicketView result = client.requestTicket(username, servername,
+        			new Random().nextLong(), 60 /* seconds */);
+			
+			// Store new ticket
+			validTickets.storeTicket(servername, result, System.currentTimeMillis() + 60000);
+			
+			return result;
+		}catch (BadTicketRequest_Exception e1) {
+			throw new RuntimeException("Error: new session request failed.");
+		}
+	}
+	
+	/**
+	 * Generates a new authenticator 
+	 * @param sessionKey
+	 * @return ciphered authenticator
+	 */
+	private CipheredView generateAuth(SessionKey sessionKey, SOAPMessageContext smc) {
+		Date requestTime = null;
+		
+		// To test replay-attack
+		if(attackMode == REPLAY_ATTACK) 
+			requestTime = new Date(System.currentTimeMillis() - 1000);
+		else
+			requestTime = new Date();
+		
+        Auth auth = new Auth(username, requestTime);
+        
+        // Add request time to context to latter handle inbound msg
+        smc.put(CONTEXT_REQ_TIME, requestTime);
+        
+        // Encrypt authenticator
+        try {
+			return auth.cipher(sessionKey.getKeyXY());
+		} catch (KerbyException e1) {
+			throw new RuntimeException("Error: authenticator encryption failed.");
+		}        
+	}
+	
+	/**
+	 * Creates a new header with the given element and name
+	 * @param cipheredElem element to include
+	 * @param localname header name
+	 * @param se SOAP envelope
+	 * @param sh SOAP header
+	 */
+	private void appendHeader(CipheredView cipheredElem, String localname, SOAPEnvelope se, SOAPHeader sh) {
+		try {
+			Name headerName = se.createName(localname, SOAP_PREFIX, BINAS_NS);
+			SOAPHeaderElement header = sh.addHeaderElement(headerName);
+			
+			String cipheredElemString = printBase64Binary(cipheredElem.getData());
+			header.addTextNode(cipheredElemString);	
+			
+		}catch(SOAPException e) {
+			throw new RuntimeException("Error: failed to include header " + localname);
 		}
 	}
 
-	/**
-	 * Set server info
-	 * @param server
-	 */
-	public static void setServer(String server) {
-		if ( server != null && !server.trim().isEmpty() ) {
-			servername = server;
-		}
-	}
 
 
 }

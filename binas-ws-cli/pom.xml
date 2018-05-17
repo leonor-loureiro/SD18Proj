@@ -27,6 +27,8 @@
 		<group.id>T08</group.id>
 		<uddi.url>http://t08:Ta4TXUB@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
 		<ws.name>${group.id}_Binas</ws.name>
+		<ws.fase>F1</ws.fase>
+		<ws.showLog>yes</ws.showLog>
 		<supplier.ws.name>${group.id}_Binas</supplier.ws.name>
 		<ws.url>http://localhost:8080/binas-ws/endpoint</ws.url>
 	</properties>
@@ -124,6 +126,8 @@
 					<arguments>
 						<argument>${uddi.url}</argument>
 						<argument>${ws.name}</argument>
+						<argument>${ws.fase}</argument>
+						<argument>${ws.showLog}</argument>
 					</arguments>
 				</configuration>
 			</plugin>

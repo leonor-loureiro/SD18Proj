@@ -1,18 +1,27 @@
 package binas.ws.handler;
 
-import javax.crypto.Mac;
-import javax.xml.namespace.QName;
-import javax.xml.soap.*;
-import javax.xml.ws.handler.MessageContext;
-import javax.xml.ws.handler.soap.SOAPHandler;
-import javax.xml.ws.handler.soap.SOAPMessageContext;
+import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+
+import java.math.BigInteger;
 import java.security.Key;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Set;
 
-import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+import javax.crypto.Mac;
+import javax.xml.namespace.QName;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.soap.SOAPHandler;
+import javax.xml.ws.handler.soap.SOAPMessageContext;
 
 public class MACHandler implements SOAPHandler<SOAPMessageContext> {
 
@@ -31,6 +40,18 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
     //Context
     private static final String CONTEXT_SESSION_KEY = "context_session_key";
 
+    // ATTACK MODES FOR SECURITY DEMOSTRATION
+ 	public static final int NO_ATTACK = 0;
+ 	public static final int CORRUPT_CONTENT = 1;
+ 	private static int attackMode = NO_ATTACK;
+ 	
+ 	/**
+ 	 * Set attack mode for security demonstration
+ 	 */
+ 	public static void setAttackMode(int mode) {
+ 		attackMode = mode;
+ 	}
+ 	
     @Override
     public Set<QName> getHeaders() {
         return null;
@@ -62,6 +83,22 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
 
     private void handleOUT(SOAPMessageContext context) {
         appendMAC(context.getMessage(), myMakeMAC(context.getMessage(),extractSessionKey(context)));
+        
+        // To test integrity attack for security demonstration
+        if(attackMode == CORRUPT_CONTENT) {
+        	try {
+        		SOAPMessage msg = context.getMessage();
+        		SOAPEnvelope env = msg.getSOAPPart().getEnvelope();
+        		SOAPBody bd = env.getBody();
+        		
+        		Name name = env.createName("corrupted_content", "b", "urn:binas.corrupted-content-attack");
+        		SOAPElement el = bd.addBodyElement(name);
+        		el.addTextNode("CORRUPTED MESSAGE!!!!!!!");
+        		
+			} catch (SOAPException e) {
+				System.out.println("Error: failed to get SOAP envelope.");
+			}
+        }
     }
 
     private Key extractSessionKey(SOAPMessageContext context) {
