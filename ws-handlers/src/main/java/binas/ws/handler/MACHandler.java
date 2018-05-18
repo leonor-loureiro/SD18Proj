@@ -67,20 +67,29 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         }
         return true;
     }
+
     @Override
     public boolean handleFault(SOAPMessageContext context) {
-        return false;
+        throw new RuntimeException("Error handling SOAP Message");
     }
 
     @Override
-    public void close(MessageContext context) {
+    public void close(MessageContext context) {}
 
-    }
-
+    /**
+     * Handles incoming messages
+     * Makes sure the message is unadulterated
+     * @param context
+     */
     private void handleIN(SOAPMessageContext context) {
         myVerifyMAC(context.getMessage(), extractSessionKey(context));
     }
 
+    /**
+     * Handles outgoing messages
+     * Appends hash of the body to message for future verification
+     * @param context
+     */
     private void handleOUT(SOAPMessageContext context) {
         appendMAC(context.getMessage(), myMakeMAC(context.getMessage(),extractSessionKey(context)));
         
@@ -101,15 +110,28 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         }
     }
 
+    /**
+     * Extracts session key from context
+     * @param context handler context
+     * @return session key
+     */
     private Key extractSessionKey(SOAPMessageContext context) {
         return (Key) context.get(CONTEXT_SESSION_KEY);
     }
 
+    /**
+     * Wrapper to verify message
+     * @param msg Message to be verified
+     * @param sessionKey Key
+     */
     private void myVerifyMAC(SOAPMessage msg, Key sessionKey) {
        if ( !verifyMAC(myMakeMAC(msg, sessionKey), extractMac(msg)) )
            throw new RuntimeException("Invalid MAC");
     }
 
+    /**
+     * Extracts MAC component from message
+     */
     private byte[] extractMac(SOAPMessage msg) {
         try {
             SOAPEnvelope envelope = msg.getSOAPPart().getEnvelope();
@@ -130,6 +152,9 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         }
     }
 
+    /**
+     * Adds MAC component to message
+     */
     private void appendMAC(SOAPMessage message, byte[] mac) {
         String macString = printBase64Binary(mac);
         SOAPHeader header;
@@ -151,6 +176,9 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         }
     }
 
+    /**
+     * Wrapper for to create MAC
+     */
     private byte[] myMakeMAC(SOAPMessage msg, Key key) {
         byte[] mac;
 
@@ -162,6 +190,12 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         return mac;
     }
 
+    /**
+     * Creates MAC hash using HmacSHA256
+     * @param bytes bytes to hash
+     * @param key key to use
+     * @return hashed bytes
+     */
     private byte[] makeMAC(byte[] bytes, Key key) throws Exception {
 
         Mac cipher = Mac.getInstance(MAC_ALGO);
@@ -170,10 +204,17 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
         return cipher.doFinal(bytes);
     }
 
-    private boolean verifyMAC(byte[] cipherDigest, byte[] bytes) {
-        return Arrays.equals(cipherDigest, bytes);
+    /**
+     * Compares the two MACs to verify integrity
+     */
+    private boolean verifyMAC(byte[] cipherDigest, byte[] cipher) {
+        return Arrays.equals(cipherDigest, cipher);
     }
 
+    /**
+     * Converts message to bytes
+     * Note: currently only converting body elements
+     */
     private static byte[] SOAPMessageToByteArray(SOAPMessage msg) throws Exception {
         return parseBase64Binary(msg.getSOAPBody().getTextContent());
     }
