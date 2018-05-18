@@ -70,7 +70,7 @@ public class MACHandler implements SOAPHandler<SOAPMessageContext> {
 
     @Override
     public boolean handleFault(SOAPMessageContext context) {
-        throw new RuntimeException("Error handling SOAP Message");
+        return true;
     }
 
     @Override
