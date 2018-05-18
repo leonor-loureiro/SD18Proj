@@ -5,7 +5,9 @@ import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -67,6 +69,9 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 	public static final int NO_ATTACK = 0;
 	public static final int REPLAY_ATTACK = 2;	
 	private static int attackMode = NO_ATTACK;
+	
+	// OLD REQUEST TIMES STORED TO SIMULATE REPLAY_ATTACK
+	private static Map<String,Date> oldRequestTimes = new HashMap<>();
 	
 	/**
  	 * Set attack mode for security demonstration
@@ -324,10 +329,17 @@ public class KerberosClientHandler implements SOAPHandler<SOAPMessageContext>{
 		Date requestTime = null;
 		
 		// To test replay-attack
-		if(attackMode == REPLAY_ATTACK) 
-			requestTime = new Date(System.currentTimeMillis() - 1000);
-		else
+		if(attackMode == REPLAY_ATTACK) {
+			requestTime = oldRequestTimes.get(username);
+			if(requestTime == null) {
+				System.out.println("REPLAY_ATTACK not possible to simulate. User has not sent any previous request.");
+			}
+		}
+		
+		if (requestTime == null) {
 			requestTime = new Date();
+			oldRequestTimes.put(username, requestTime);
+		}
 		
         Auth auth = new Auth(username, requestTime);
         

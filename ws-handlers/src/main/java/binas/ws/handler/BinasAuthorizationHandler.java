@@ -1,21 +1,19 @@
 package binas.ws.handler;
 
 
-import java.util.*;
-
-import java.security.Key;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.*;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
 import org.w3c.dom.NodeList;
-import pt.ulisboa.tecnico.sdis.kerby.*;
-
-import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 /**
  * Checks if the client has permissions to execute the operation
@@ -29,6 +27,9 @@ public class BinasAuthorizationHandler implements SOAPHandler<SOAPMessageContext
 	private static final String CONTEXT_REQ_TIME = "context_time";
 	private static final String CONTEXT_LAST_SESSION = "context_session_key";
 	private static final String CONTEXT_USERNAME = "context_username";
+	
+	// REQUEST TIMES
+	private static Map<String,Date> oldRequestTimes = new HashMap<>();
 
 	/**
 	 * Called at the conclusion of a message exchange pattern just prior to the
@@ -74,9 +75,11 @@ public class BinasAuthorizationHandler implements SOAPHandler<SOAPMessageContext
 			
 
 			// Verifies freshness of request time
-			if( !isReqTimeFresh(reqTime)){
+			if( !isReqTimeFresh(reqTime, username)){
 				throw new RuntimeException("Request Time is not fresh");
 			}
+			
+			oldRequestTimes.put(username, reqTime);
 
 			SOAPMessage msg = arg0.getMessage();
 			
@@ -110,9 +113,13 @@ public class BinasAuthorizationHandler implements SOAPHandler<SOAPMessageContext
 	/**
 	 * Checks if given time matches the current time, with an maximum offset of 500 milliseconds
 	 */
-	private boolean isReqTimeFresh(Date reqTime) {
+	private boolean isReqTimeFresh(Date reqTime, String username) {
+		Date oldReqTime = oldRequestTimes.get(username); 
+		if(oldReqTime!= null && oldReqTime.equals(reqTime))
+			throw new RuntimeException("This request has been sent before.");
+		
 		Date current = new Date();
-		return current.getTime() - 600 < reqTime.getTime() && reqTime.getTime() < current.getTime() + 600;
+		return current.getTime() - 750 < reqTime.getTime() && reqTime.getTime() < current.getTime() + 750;
 	}
 
 }

@@ -106,9 +106,12 @@ public class BinasClientApp {
 	        System.out.println("\n====================  REPLAY ATTACK  ======================\n");
 	        KerberosClientHandler.setAttackMode(KerberosClientHandler.REPLAY_ATTACK);
 	        try {
+	        	System.out.println("User " + username1 + " requests her credit info.\n");
+	        	client.getCredit(username1); 
+	        	System.out.println("The exact same request is sent again.\n");
 	        	client.getCredit(username1);     	
 	        }catch(ServerSOAPFaultException e) {
-	        	System.out.println("\nReplay attack prevented.\n");
+	        	System.out.println("Replay attack prevented.\n");
 	        	System.out.println(e.getMessage() + "\n");
 	        }
 	        
@@ -121,9 +124,10 @@ public class BinasClientApp {
 	        MACHandler.setAttackMode(MACHandler.CORRUPT_CONTENT);
 	        
 	        try {
+	        	System.out.println("User" + username1 + "request her credit info. The request is corrupted after the MAC is computed.\n");
 	        	client.getCredit(username1);     	
 	        }catch(ServerSOAPFaultException e) {
-	        	System.out.println("\nIntegrity attack prevented.\n");
+	        	System.out.println("Integrity attack prevented.\n");
 	        	System.out.println(e.getMessage() + "\n");
 	        }
 	        
@@ -136,16 +140,18 @@ public class BinasClientApp {
 	        MACHandler.setAttackMode(MACHandler.NO_ATTACK);
 	        
 	        try {
+	        	System.out.println("User" + username1 + "request the credit info of user " + username2 + ".\n");
 	        	client.getCredit(username2);     	
 	        }catch(ServerSOAPFaultException e) {
-	        	System.out.println("\nUser stoped from reading info of another user.\n");
+	        	System.out.println("User stoped from reading info of another user.\n");
 	        	System.out.println(e.getMessage() + "\n");
 	        }
 	        
 	        try {
+	        	System.out.println("\nUser" + username1 + "tries to rent a bina in user " + username2 + " name.\n");
 	        	client.rentBina(stationID, username2);     	
 	        }catch(ServerSOAPFaultException e) {
-	        	System.out.println("\nUser stoped from altering state of another user.\n");
+	        	System.out.println("User stoped from altering state of another user.\n");
 	        	System.out.println(e.getMessage() + "\n");
 	        }
     	}
